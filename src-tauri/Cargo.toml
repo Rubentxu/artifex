@@ -1,0 +1,63 @@
+[package]
+name = "src-tauri"
+version = "0.1.0"
+edition = "2021"
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+# Tauri v2 core and plugins
+tauri = { workspace = true }
+tauri-plugin-store = { workspace = true }
+tauri-plugin-dialog = { workspace = true }
+tauri-plugin-fs = { workspace = true }
+tauri-plugin-shell = { workspace = true }
+
+# Database
+sqlx = { workspace = true }
+
+# Date/time and UUID
+chrono = { workspace = true }
+uuid = { workspace = true }
+
+# Async runtime
+tokio = { workspace = true }
+
+# Serialization
+serde = { workspace = true }
+serde_json = { workspace = true }
+
+# Workspace crates
+artifex-shared-kernel = { path = "../crates/artifex-shared-kernel" }
+artifex-asset-management = { path = "../crates/artifex-asset-management" }
+artifex-job-queue = { path = "../crates/artifex-job-queue" }
+artifex-model-config = { path = "../crates/artifex-model-config" }
+
+# Error handling
+thiserror = { workspace = true }
+
+# Async traits
+async-trait = { workspace = true }
+
+# HTTP client for provider adapters
+reqwest = { version = "0.12", features = ["json"] }
+
+# Keychain for credential storage
+keyring = "3"
+
+# Test utilities
+tempfile = { workspace = true }
+
+# Image generation (stub)
+image = { version = "0.25", default-features = false, features = ["png"] }
+
+# Logging
+tracing = { workspace = true }
+
+# Concurrency
+dashmap = "5"
+
+[features]
+default = ["custom-protocol"]
+custom-protocol = ["tauri/custom-protocol"]

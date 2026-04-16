@@ -1,0 +1,26 @@
+@import "tailwindcss";
+
+:root {
+  --color-canvas: #1a1a2e;
+  --color-panel: #16213e;
+  --color-surface: #0f3460;
+  --color-accent: #e94560;
+  --color-text: #eaeaea;
+  --color-text-muted: #9ca3af;
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+  font-family: var(--font-sans);
+  background-color: var(--color-canvas);
+  color: var(--color-text);
+  overflow: hidden;
+}

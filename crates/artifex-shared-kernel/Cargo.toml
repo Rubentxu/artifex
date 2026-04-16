@@ -1,0 +1,15 @@
+[package]
+name = "artifex-shared-kernel"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+uuid = { version = "1", features = ["v4", "serde"] }
+serde = { version = "1", features = ["derive"] }
+thiserror = "2"
+chrono = { version = "0.4", features = ["serde"] }
+sqlx = { version = "0.8", features = ["sqlite"] }
+
+[dev-dependencies]
+serde_json = "1"
+tempfile = "3"

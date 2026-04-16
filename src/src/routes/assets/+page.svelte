@@ -1,0 +1,237 @@
+<script lang="ts">
+  import { onMount, onDestroy } from 'svelte';
+  import { assetStore, filteredAssets } from '$lib/stores/asset';
+  import { selectedProject } from '$lib/stores/project';
+  import AssetCard from '$lib/components/AssetCard.svelte';
+  import GenerateImageDialog from '$lib/components/GenerateImageDialog.svelte';
+  import GenerateAudioDialog from '$lib/components/GenerateAudioDialog.svelte';
+  import { open } from '@tauri-apps/plugin-dialog';
+  import type { AssetKind } from '$lib/types/asset';
+
+  interface JobCompletedPayload {
+    job_id: string;
+    asset_ids: string[];
+  }
+
+  let showGenerateImageDialog = $state(false);
+  let showGenerateAudioDialog = $state(false);
+  let importError = $state<string | null>(null);
+  let unlistenJobCompleted: (() => void) | null = null;
+
+  const filterKinds: (AssetKind | 'All')[] = ['All', 'Image', 'Sprite', 'Tileset', 'Material', 'Audio', 'Voice', 'Video', 'Other'];
+
+  onMount(async () => {
+    if ($selectedProject) {
+      assetStore.loadAssets($selectedProject.id);
+    }
+
+    // Listen for job-completed events to refresh asset list
+    try {
+      const { listen } = await import('@tauri-apps/api/event');
+      unlistenJobCompleted = await listen<JobCompletedPayload>('job-completed', (event) => {
+        console.log('Job completed:', event.payload);
+        // Refresh asset list when a job completes
+        if ($selectedProject) {
+          assetStore.loadAssets($selectedProject.id);
+        }
+      });
+    } catch (e) {
+      console.warn('Failed to listen for job-completed event:', e);
+    }
+  });
+
+  onDestroy(() => {
+    if (unlistenJobCompleted) {
+      unlistenJobCompleted();
+    }
+  });
+
+  $effect(() => {
+    if ($selectedProject) {
+      assetStore.loadAssets($selectedProject.id);
+    }
+  });
+
+  function handleFilterClick(kind: AssetKind | 'All') {
+    assetStore.setFilterKind(kind === 'All' ? null : kind);
+  }
+
+  function handleAssetClick(assetId: string) {
+    assetStore.selectAsset(assetId === $assetStore.selectedId ? null : assetId);
+  }
+
+  async function handleImport() {
+    if (!$selectedProject) return;
+
+    importError = null;
+    try {
+      const selected = await open({
+        directory: false,
+        multiple: false,
+        title: 'Select asset file to import',
+      });
+      if (selected) {
+        const filePath = selected as string;
+        const fileName = filePath.split(/[/\\]/).pop() || 'Imported Asset';
+        const ext = fileName.split('.').pop()?.toLowerCase() || '';
+        let kind: AssetKind = 'Other';
+        if (['png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp'].includes(ext)) {
+          kind = 'Image';
+        } else if (['wav', 'mp3', 'ogg', 'flac', 'aac'].includes(ext)) {
+          kind = 'Audio';
+        } else if (['mp4', 'avi', 'mov', 'mkv'].includes(ext)) {
+          kind = 'Video';
+        }
+        await assetStore.importAsset($selectedProject.id, filePath, fileName, kind);
+      }
+    } catch (e) {
+      importError = e instanceof Error ? e.message : String(e);
+    }
+  }
+</script>
+
+<div class="h-full flex flex-col overflow-hidden">
+  <!-- Header -->
+  <header class="flex items-center justify-between px-6 py-4 border-b border-[var(--color-surface)]">
+    <h1 class="text-2xl font-bold">Assets</h1>
+    <div class="flex items-center gap-2">
+      <button
+        onclick={() => (showGenerateImageDialog = true)}
+        class="flex items-center gap-2 px-4 py-2 bg-[var(--color-accent)] hover:bg-[var(--color-accent)]/80 rounded-lg transition-colors font-medium"
+        disabled={!$selectedProject}
+        title={$selectedProject ? '' : 'Select a project first'}
+      >
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+        </svg>
+        Generate Image
+      </button>
+      <button
+        onclick={() => (showGenerateAudioDialog = true)}
+        class="flex items-center gap-2 px-4 py-2 bg-[var(--color-surface)] hover:bg-[var(--color-surface)]/80 rounded-lg transition-colors font-medium"
+        disabled={!$selectedProject}
+        title={$selectedProject ? '' : 'Select a project first'}
+      >
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
+        </svg>
+        Generate Audio
+      </button>
+      <button
+        onclick={handleImport}
+        class="flex items-center gap-2 px-4 py-2 bg-[var(--color-surface)] hover:bg-[var(--color-surface)]/80 rounded-lg transition-colors font-medium"
+        disabled={!$selectedProject}
+        title={$selectedProject ? '' : 'Select a project first'}
+      >
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+        </svg>
+        Import
+      </button>
+    </div>
+  </header>
+
+  <!-- Filter bar -->
+  <div class="flex items-center gap-2 px-6 py-3 border-b border-[var(--color-surface)] overflow-x-auto">
+    {#each filterKinds as kind}
+      <button
+        onclick={() => handleFilterClick(kind)}
+        class="shrink-0 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors
+          {($assetStore.filterKind === (kind === 'All' ? null : kind))
+            ? 'bg-[var(--color-accent)] text-white'
+            : 'bg-[var(--color-surface)] hover:bg-[var(--color-surface)]/80 text-[var(--color-text)]'}"
+      >
+        {kind}
+      </button>
+    {/each}
+  </div>
+
+  <!-- Error display -->
+  {#if importError}
+    <div class="mx-6 mt-3 p-3 rounded-lg bg-red-500/20 border border-red-500/50 text-red-400 text-sm">
+      {importError}
+    </div>
+  {/if}
+
+  <!-- Asset Grid -->
+  <main class="flex-1 overflow-y-auto p-6">
+    {#if !$selectedProject}
+      <div class="flex flex-col items-center justify-center h-full text-center">
+        <div class="w-24 h-24 rounded-full bg-[var(--color-panel)] flex items-center justify-center mb-4">
+          <svg class="w-12 h-12 text-[var(--color-text-muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+          </svg>
+        </div>
+        <h2 class="text-xl font-semibold mb-2">No project selected</h2>
+        <p class="text-[var(--color-text-muted)]">Select a project to view its assets</p>
+      </div>
+    {:else if $filteredAssets.length > 0}
+      <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+        {#each $filteredAssets as asset (asset.id)}
+          <AssetCard
+            {asset}
+            selected={$assetStore.selectedId === asset.id}
+            onclick={() => handleAssetClick(asset.id)}
+          />
+        {/each}
+      </div>
+    {:else}
+      <div class="flex flex-col items-center justify-center h-full text-center">
+        <div class="w-24 h-24 rounded-full bg-[var(--color-panel)] flex items-center justify-center mb-4">
+          <svg class="w-12 h-12 text-[var(--color-text-muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          </svg>
+        </div>
+        <h2 class="text-xl font-semibold mb-2">No assets yet</h2>
+        <p class="text-[var(--color-text-muted)] mb-4">Import files or generate images to get started</p>
+        <div class="flex gap-2">
+          <button
+            onclick={handleImport}
+            class="flex items-center gap-2 px-4 py-2 bg-[var(--color-surface)] hover:bg-[var(--color-surface)]/80 rounded-lg transition-colors font-medium"
+          >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+            </svg>
+            Import
+          </button>
+          <button
+            onclick={() => (showGenerateImageDialog = true)}
+            class="flex items-center gap-2 px-4 py-2 bg-[var(--color-accent)] hover:bg-[var(--color-accent)]/80 rounded-lg transition-colors font-medium"
+          >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+            </svg>
+            Generate Image
+          </button>
+          <button
+            onclick={() => (showGenerateAudioDialog = true)}
+            class="flex items-center gap-2 px-4 py-2 bg-[var(--color-surface)] hover:bg-[var(--color-surface)]/80 rounded-lg transition-colors font-medium"
+          >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
+            </svg>
+            Generate Audio
+          </button>
+        </div>
+      </div>
+    {/if}
+  </main>
+</div>
+
+<!-- Generate Image Dialog -->
+{#if showGenerateImageDialog && $selectedProject}
+  <GenerateImageDialog
+    open={showGenerateImageDialog}
+    projectId={$selectedProject.id}
+    onclose={() => (showGenerateImageDialog = false)}
+  />
+{/if}
+
+<!-- Generate Audio Dialog -->
+{#if showGenerateAudioDialog && $selectedProject}
+  <GenerateAudioDialog
+    open={showGenerateAudioDialog}
+    projectId={$selectedProject.id}
+    onclose={() => (showGenerateAudioDialog = false)}
+  />
+{/if}
