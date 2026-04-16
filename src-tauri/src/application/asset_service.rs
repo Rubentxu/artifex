@@ -9,6 +9,8 @@ use std::sync::Arc;
 use artifex_asset_management::{Asset, AssetKind, AssetRepository};
 use artifex_shared_kernel::{ArtifexError, AssetId, ProjectId};
 
+use super::audio_metadata::extract_audio_metadata;
+
 /// Application service for asset operations.
 #[derive(Clone)]
 pub struct AssetApplicationService {
@@ -128,6 +130,30 @@ impl AssetApplicationService {
             }
         }
 
+        // For audio/voice assets, extract metadata from file
+        if matches!(asset_kind_clone, AssetKind::Audio | AssetKind::Voice) {
+            let meta = extract_audio_metadata(&dest_path);
+            let mut metadata = asset.metadata.take().unwrap_or(serde_json::json!({}));
+            if let Some(obj) = metadata.as_object_mut() {
+                if let Some(d) = meta.duration_secs {
+                    obj.insert("duration_secs".to_string(), serde_json::json!(d));
+                }
+                if let Some(sr) = meta.sample_rate {
+                    obj.insert("sample_rate".to_string(), serde_json::json!(sr));
+                }
+                if let Some(ref f) = meta.format {
+                    obj.insert("format".to_string(), serde_json::json!(f));
+                }
+            }
+            asset.metadata = Some(metadata);
+            tracing::debug!(
+                "Extracted audio metadata: duration={:?}, sample_rate={:?}, format={:?}",
+                meta.duration_secs,
+                meta.sample_rate,
+                meta.format
+            );
+        }
+
         self.repo.create(&asset).await
     }
 
@@ -163,7 +189,30 @@ impl AssetApplicationService {
             .map_err(|e| ArtifexError::validation(e))?;
         asset.file_path = Some(file_path.to_string());
         asset.file_size = Some(meta.len());
-        asset.metadata = metadata;
+
+        // Merge provided metadata with audio metadata (file-based preferred for audio)
+        let mut merged_metadata = metadata.unwrap_or(serde_json::json!({}));
+        if matches!(asset_kind, AssetKind::Audio | AssetKind::Voice) {
+            let file_meta = extract_audio_metadata(path);
+            if let Some(obj) = merged_metadata.as_object_mut() {
+                if let Some(d) = file_meta.duration_secs {
+                    obj.insert("duration_secs".to_string(), serde_json::json!(d));
+                }
+                if let Some(sr) = file_meta.sample_rate {
+                    obj.insert("sample_rate".to_string(), serde_json::json!(sr));
+                }
+                if let Some(ref f) = file_meta.format {
+                    obj.insert("format".to_string(), serde_json::json!(f));
+                }
+            }
+            tracing::debug!(
+                "Extracted audio metadata for registered asset: duration={:?}, sample_rate={:?}, format={:?}",
+                file_meta.duration_secs,
+                file_meta.sample_rate,
+                file_meta.format
+            );
+        }
+        asset.metadata = Some(merged_metadata);
 
         // For image assets, try to get dimensions
         if asset_kind == AssetKind::Image {

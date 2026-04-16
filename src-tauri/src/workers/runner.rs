@@ -213,44 +213,45 @@ impl WorkerRunner {
             return Err(e);
         }
 
-        // Emit job-progress event at start (0%)
-        if let Some(handle) = app_handle {
-            let progress_event = JobProgressEvent {
-                job_id: job_id_str.clone(),
-                progress_percent: 0,
-                progress_message: "Starting job...".to_string(),
-            };
-            let _ = handle.emit("job-progress", progress_event);
-        }
-
-        // Report initial progress
-        let _ = job_repo.update_progress(&job.id, 10, Some("Starting job...")).await;
-
-        // Process the job
-        match worker.process(&job).await {
-            Ok(result) => {
-                // Emit 50% progress event - generation is complete, now saving asset
+        // Helper: emit progress event and persist to DB at each phase
+        let emit_progress = |percent: u8, message: &'static str| {
+            let job_id = job.id.clone();
+            let app_handle = app_handle.cloned();
+            let job_repo = job_repo.clone();
+            async move {
+                // Emit event
                 if let Some(handle) = app_handle {
                     let progress_event = JobProgressEvent {
-                        job_id: job_id_str.clone(),
-                        progress_percent: 50,
-                        progress_message: "Generation complete, saving asset...".to_string(),
+                        job_id: job_id.into_uuid().to_string(),
+                        progress_percent: percent,
+                        progress_message: message.to_string(),
                     };
                     let _ = handle.emit("job-progress", progress_event);
                 }
+                // Persist to DB (best effort — don't fail the job on persistence error)
+                let _ = job_repo.update_progress(&job_id, percent, Some(message)).await;
+            }
+        };
 
-                // Update progress to completion
-                let _ = job_repo
-                    .update_progress(&job.id, 100, Some("Job completed"))
-                    .await;
+        // Phase 1: Queued (10%) — before dispatch
+        emit_progress(10, "Job queued").await;
 
-                // Update status to Completed (also sets completed_at)
-                let mut asset_ids = Vec::new();
-                if let Err(e) = job_repo.mark_completed(&job.id).await {
-                    tracing::error!("Failed to update job {} status to Completed: {}", job_id_str, e);
-                }
+        // Phase 2: Calling provider (30%) — just before worker.process()
+        emit_progress(30, "Calling provider").await;
+
+        // Process the job
+        let result = worker.process(&job).await;
+
+        // Phase 3: Receiving result (70%) — after worker.process() returns
+        emit_progress(70, "Receiving result").await;
+
+        match result {
+            Ok(result) => {
+                // Phase 4: Saving asset (90%) — before asset registration
+                emit_progress(90, "Saving asset").await;
 
                 // Register asset(s) for completed job output
+                let mut asset_ids = Vec::new();
                 if !result.output_files.is_empty() {
                     // Determine asset kind based on job type
                     let asset_kind = match job.job_type.as_str() {
@@ -267,12 +268,9 @@ impl WorkerRunner {
                             .map(|n| n.to_string_lossy().to_string())
                             .unwrap_or_else(|| format!("generated_{}.bin", asset_kind));
 
-                        // Extract metadata for the asset
                         let metadata = Some(result.metadata.clone());
-
                         let file_path = output_file.to_string_lossy().to_string();
 
-                        // Register the asset (don't fail the job if asset registration fails)
                         let asset_service_clone = asset_service.clone();
                         match asset_service_clone
                             .register_asset(&project_id, &asset_name, asset_kind, &file_path, metadata)
@@ -295,6 +293,11 @@ impl WorkerRunner {
                     }
                 }
 
+                // Phase 5: Completed (100%) — after asset registration
+                let _ = job_repo.update_progress(&job.id, 100, Some("Completed")).await;
+                emit_progress(100, "Complete").await;
+                let _ = job_repo.mark_completed(&job.id).await;
+
                 // Emit job-completed event
                 if let Some(handle) = app_handle {
                     let completed_event = JobCompletedEvent {
@@ -314,18 +317,18 @@ impl WorkerRunner {
                 tracing::error!("Job {} failed: {}", job_id_str, e);
                 let error_msg = e.to_string();
 
-                // Update status to Failed and persist error message
-                if let Err(update_err) = job_repo.update_failure(&job.id, &error_msg).await {
-                    tracing::error!("Failed to update job {} failure status: {}", job_id_str, update_err);
-                }
-
-                // Emit job-failed event
+                // Emit job-failed event immediately
                 if let Some(handle) = app_handle {
                     let failed_event = JobFailedEvent {
                         job_id: job_id_str.clone(),
-                        error_message: error_msg,
+                        error_message: error_msg.clone(),
                     };
                     let _ = handle.emit("job-failed", failed_event);
+                }
+
+                // Update status to Failed and persist error message
+                if let Err(update_err) = job_repo.update_failure(&job.id, &error_msg).await {
+                    tracing::error!("Failed to update job {} failure status: {}", job_id_str, update_err);
                 }
             }
         }

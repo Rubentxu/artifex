@@ -7,8 +7,8 @@
 
   interface JobProgress {
     job_id: string;
-    percent: number;
-    message: string;
+    progress_percent: number;
+    progress_message: string;
   }
 
   interface JobCompleted {
@@ -143,7 +143,7 @@
     {#if statusMessage}
       <span>{statusMessage}</span>
     {:else if currentProgress}
-      <span>Processing... {currentProgress.percent}% {currentProgress.message}</span>
+      <span>Processing... {currentProgress.progress_percent}% {currentProgress.progress_message}</span>
     {:else if activeJobs > 0}
       <span>Processing... ({activeJobs} job{activeJobs > 1 ? 's' : ''})</span>
     {:else}

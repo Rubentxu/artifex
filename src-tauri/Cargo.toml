@@ -58,6 +58,9 @@ tracing = { workspace = true }
 # Concurrency
 dashmap = "5"
 
+# Audio metadata extraction
+symphonia = { version = "0.5", features = ["mp3", "wav", "ogg"] }
+
 [features]
 default = ["custom-protocol"]
 custom-protocol = ["tauri/custom-protocol"]

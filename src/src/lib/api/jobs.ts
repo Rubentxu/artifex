@@ -12,8 +12,21 @@ function getBackend(): StorageBackend {
   return backend;
 }
 
-export async function listJobs(projectId: string, jobType?: string): Promise<JobResponse[]> {
-  return getBackend().invoke<JobResponse[]>('list_jobs', { projectId, jobType: jobType || null });
+export interface ListJobsFilters {
+  jobType?: string;
+  status?: string;
+  limit?: number;
+  offset?: number;
+}
+
+export async function listJobs(projectId: string, filters?: ListJobsFilters): Promise<JobResponse[]> {
+  return getBackend().invoke<JobResponse[]>('list_jobs', {
+    projectId,
+    jobType: filters?.jobType ?? null,
+    status: filters?.status ?? null,
+    limit: filters?.limit ?? null,
+    offset: filters?.offset ?? null,
+  });
 }
 
 export async function getJob(id: string): Promise<JobResponse> {

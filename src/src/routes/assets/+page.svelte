@@ -5,6 +5,7 @@
   import AssetCard from '$lib/components/AssetCard.svelte';
   import GenerateImageDialog from '$lib/components/GenerateImageDialog.svelte';
   import GenerateAudioDialog from '$lib/components/GenerateAudioDialog.svelte';
+  import JobHistoryPanel from '$lib/components/JobHistoryPanel.svelte';
   import { open } from '@tauri-apps/plugin-dialog';
   import type { AssetKind } from '$lib/types/asset';
 
@@ -216,6 +217,11 @@
       </div>
     {/if}
   </main>
+
+  <!-- Recent Jobs -->
+  {#if $selectedProject}
+    <JobHistoryPanel projectId={$selectedProject.id} />
+  {/if}
 </div>
 
 <!-- Generate Image Dialog -->
