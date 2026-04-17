@@ -15,6 +15,17 @@
     format?: string;
   }
 
+  interface Props {
+    onRemoveBackground?: (assetId: string) => void;
+    onConvertPixelArt?: (assetId: string) => void;
+  }
+
+  let { onRemoveBackground, onConvertPixelArt }: Props = $props();
+
+  function isImageAsset(kind: string | undefined): boolean {
+    return kind === 'Image' || kind === 'Sprite' || kind === 'Tileset' || kind === 'Material';
+  }
+
   function formatDate(dateStr: string): string {
     try {
       const date = new Date(dateStr);
@@ -187,6 +198,39 @@
           </label>
           <p class="mt-1 text-xs font-mono break-all">{$selectedAsset.id}</p>
         </div>
+
+        <!-- Image Actions -->
+        {#if isImageAsset($selectedAsset.kind)}
+          <div class="border-t border-[var(--color-surface)] pt-4 space-y-2">
+            <label class="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wider">
+              Actions
+            </label>
+            <div class="flex flex-col gap-2">
+              {#if onRemoveBackground}
+                <button
+                  onclick={() => onRemoveBackground($selectedAsset.id)}
+                  class="w-full px-3 py-2 rounded-lg bg-[var(--color-surface)] hover:bg-[var(--color-surface)]/80 transition-colors text-sm font-medium text-left flex items-center gap-2"
+                >
+                  <svg class="w-4 h-4 text-[var(--color-text-muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                  Remove Background
+                </button>
+              {/if}
+              {#if onConvertPixelArt}
+                <button
+                  onclick={() => onConvertPixelArt($selectedAsset.id)}
+                  class="w-full px-3 py-2 rounded-lg bg-[var(--color-surface)] hover:bg-[var(--color-surface)]/80 transition-colors text-sm font-medium text-left flex items-center gap-2"
+                >
+                  <svg class="w-4 h-4 text-[var(--color-text-muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" />
+                  </svg>
+                  Convert to Pixel Art
+                </button>
+              {/if}
+            </div>
+          </div>
+        {/if}
       </div>
     {:else if $selectedProject}
       <div class="flex-1 overflow-y-auto p-4 space-y-4">

@@ -257,7 +257,8 @@ impl WorkerRunner {
                     let asset_kind = match job.job_type.as_str() {
                         "audio_generate" => "audio",
                         "tts_synthesize" => "voice",
-                        "image_generate" => "image",
+                        "image_generate" | "image_remove_background" | "pixel_art_convert" => "image",
+                        "tile_generate" => "tileset",
                         _ => "unknown",
                     };
 

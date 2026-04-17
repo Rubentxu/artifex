@@ -43,6 +43,15 @@
         case 'tts_synthesize':
           await assetStore.synthesizeSpeech(job.operation as Parameters<typeof assetStore.synthesizeSpeech>[0]);
           break;
+        case 'image_remove_background':
+          await assetStore.removeBackground(job.operation as Parameters<typeof assetStore.removeBackground>[0]);
+          break;
+        case 'pixel_art_convert':
+          await assetStore.convertPixelArt(job.operation as Parameters<typeof assetStore.convertPixelArt>[0]);
+          break;
+        case 'tile_generate':
+          await assetStore.generateTile(job.operation as Parameters<typeof assetStore.generateTile>[0]);
+          break;
         default:
           console.error(`Unknown job type for retry: ${job.job_type}`);
       }

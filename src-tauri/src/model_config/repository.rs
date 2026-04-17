@@ -753,5 +753,82 @@ pub async fn seed_defaults(pool: &SqlitePool) -> Result<(), ArtifexError> {
         let _ = create_rule(pool, &rule).await;
     }
 
+    // Seed background removal and tile generation profiles and routing rules
+    let imageproc_profiles = vec![
+        ModelProfile::new(
+            "replicate".to_string(),
+            "851-labs/background-remover".to_string(),
+            "Background Remover (Replicate)".to_string(),
+            vec![ModelCapability::BackgroundRemoval],
+        ),
+        ModelProfile::new(
+            "fal".to_string(),
+            "fal-ai/rmbg".to_string(),
+            "Fal Background Removal".to_string(),
+            vec![ModelCapability::BackgroundRemoval],
+        ),
+    ];
+
+    let mut imageproc_profile_ids = std::collections::HashMap::new();
+    for profile in imageproc_profiles {
+        imageproc_profile_ids.insert(profile.display_name.clone(), profile.id);
+        let _ = create_profile(pool, &profile).await;
+    }
+
+    let imageproc_rules = vec![
+        RoutingRule::new(
+            "imageproc.remove_bg".to_string(),
+            *imageproc_profile_ids
+                .get("Background Remover (Replicate)")
+                .expect("profile exists"),
+            vec![
+                *imageproc_profile_ids
+                    .get("Fal Background Removal")
+                    .expect("profile exists"),
+            ],
+        ),
+    ];
+
+    for rule in imageproc_rules {
+        let _ = create_rule(pool, &rule).await;
+    }
+
+    // Seed tile generation profiles
+    let tilegen_profiles = vec![
+        ModelProfile::new(
+            "fal".to_string(),
+            "fal-ai/patina/material".to_string(),
+            "Tile Material (Fal)".to_string(),
+            vec![ModelCapability::TileGen],
+        ),
+    ];
+
+    let mut tilegen_profile_ids = std::collections::HashMap::new();
+    for profile in tilegen_profiles {
+        tilegen_profile_ids.insert(profile.display_name.clone(), profile.id);
+        let _ = create_profile(pool, &profile).await;
+    }
+
+    let tilegen_rules = vec![
+        RoutingRule::new(
+            "tilegen.seamless".to_string(),
+            *tilegen_profile_ids
+                .get("Tile Material (Fal)")
+                .expect("profile exists"),
+            vec![],
+        ),
+        RoutingRule::new(
+            "tilegen.basic".to_string(),
+            *tilegen_profile_ids
+                .get("Tile Material (Fal)")
+                .expect("profile exists"),
+            vec![],
+        ),
+    ];
+
+    for rule in tilegen_rules {
+        let _ = create_rule(pool, &rule).await;
+    }
+
     Ok(())
 }

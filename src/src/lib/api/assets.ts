@@ -1,6 +1,6 @@
 import type { StorageBackend } from './storage-backend';
 import { TauriBackend } from './tauri-backend';
-import type { AssetResponse, ImportAssetRequest, GenerateImageRequest, GenerateAudioRequest, GenerateTtsRequest } from '$lib/types/asset';
+import type { AssetResponse, ImportAssetRequest, GenerateImageRequest, GenerateAudioRequest, GenerateTtsRequest, RemoveBackgroundRequest, ConvertPixelArtRequest, GenerateTileRequest } from '$lib/types/asset';
 
 let backend: StorageBackend;
 export function setBackend(b: StorageBackend): void {
@@ -41,4 +41,19 @@ export async function generateAudio(request: GenerateAudioRequest): Promise<stri
 export async function synthesizeSpeech(request: GenerateTtsRequest): Promise<string> {
   // Returns job_id
   return getBackend().invoke<string>('synthesize_speech', { request });
+}
+
+export async function removeBackground(request: RemoveBackgroundRequest): Promise<string> {
+  // Returns job_id
+  return getBackend().invoke<string>('remove_background', { request });
+}
+
+export async function convertPixelArt(request: ConvertPixelArtRequest): Promise<string> {
+  // Returns job_id
+  return getBackend().invoke<string>('convert_pixel_art', { request });
+}
+
+export async function generateTile(request: GenerateTileRequest): Promise<string> {
+  // Returns job_id
+  return getBackend().invoke<string>('generate_tile', { request });
 }

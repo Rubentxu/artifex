@@ -160,6 +160,96 @@ impl ImageProvider for ReplicateImageProvider {
         ))
     }
 
+    async fn remove_background(
+        &self,
+        image_data: &[u8],
+        api_key: &str,
+    ) -> Result<ImageGenResult, ProviderError> {
+        use base64::Engine;
+        // Background removal model on Replicate
+        let model_version = "851-labs/background-remover:7ba1c0c916df039fa186d4d63f7f76c5a5d65e9f6b3c53e4b7a7f7f7f7f7f7f";
+
+        // Encode image to base64
+        let image_b64 = base64::engine::general_purpose::STANDARD.encode(image_data);
+
+        // Create prediction request for background removal
+        let request_body = serde_json::json!({
+            "version": model_version,
+            "input": {
+                "image": format!("data:image/png;base64,{}", image_b64)
+            }
+        });
+
+        // Start prediction
+        let response = self
+            .http_client
+            .post("https://api.replicate.com/v1/predictions")
+            .header("Authorization", format!("Bearer {}", api_key))
+            .header("Content-Type", "application/json")
+            .json(&request_body)
+            .send()
+            .await
+            .map_err(|e| ProviderError::NetworkError(e.to_string()))?;
+
+        if !response.status().is_success() {
+            return Err(map_replicate_error(response.status().as_u16(), response.text().await.unwrap_or_default()).await);
+        }
+
+        let prediction: ReplicatePredictionResponse = response
+            .json()
+            .await
+            .map_err(|e| ProviderError::ProviderSpecific("replicate".to_string(), e.to_string()))?;
+
+        // Poll for completion
+        let final_prediction = self.poll_prediction(&prediction.urls.poll, api_key).await?;
+
+        // Get output image
+        let output_url: String = if let Some(output) = final_prediction.output {
+            if let Some(arr) = output.as_array() {
+                arr.first()
+                    .and_then(|v| v.as_str())
+                    .map(|s| s.to_string())
+                    .ok_or_else(|| {
+                        ProviderError::ProviderSpecific(
+                            "replicate".to_string(),
+                            "Output array element is not a string".to_string(),
+                        )
+                    })?
+            } else if let Some(s) = output.as_str() {
+                s.to_string()
+            } else {
+                return Err(ProviderError::ProviderSpecific(
+                    "replicate".to_string(),
+                    "Output is not a valid URL string or array".to_string(),
+                ));
+            }
+        } else {
+            return Err(ProviderError::ProviderSpecific(
+                "replicate".to_string(),
+                "No output in prediction response".to_string(),
+            ));
+        };
+
+        // Fetch the actual image data
+        let image_response = self
+            .http_client
+            .get(output_url)
+            .send()
+            .await
+            .map_err(|e| ProviderError::NetworkError(e.to_string()))?;
+
+        let result_data = image_response
+            .bytes()
+            .await
+            .map_err(|e| ProviderError::NetworkError(e.to_string()))?
+            .to_vec();
+
+        // Get dimensions from the result image
+        // For background removal, we return the same dimensions as input
+        // We don't know the exact dimensions without decoding, so use 0 as placeholder
+        Ok(ImageGenResult::new(result_data, 0, 0, "png"))
+    }
+
     fn metadata(&self) -> &ProviderMetadata {
         &self.metadata
     }

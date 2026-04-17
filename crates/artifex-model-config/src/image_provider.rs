@@ -133,6 +133,20 @@ pub trait ImageProvider: Send + Sync {
         api_key: &str,
     ) -> Result<ImageGenResult, ProviderError>;
 
+    /// Removes background from an image.
+    ///
+    /// # Arguments
+    /// * `image_data` - Raw image bytes (PNG, JPEG, etc.)
+    /// * `api_key` - API key for authentication
+    ///
+    /// # Errors
+    /// Returns an error if background removal fails.
+    async fn remove_background(
+        &self,
+        image_data: &[u8],
+        api_key: &str,
+    ) -> Result<ImageGenResult, ProviderError>;
+
     /// Returns the provider metadata.
     fn metadata(&self) -> &ProviderMetadata;
 }

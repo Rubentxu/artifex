@@ -144,6 +144,50 @@ impl ImageProvider for HuggingFaceImageProvider {
         ))
     }
 
+    async fn remove_background(
+        &self,
+        image_data: &[u8],
+        api_key: &str,
+    ) -> Result<ImageGenResult, ProviderError> {
+        use base64::Engine;
+        // HuggingFace background removal model
+        let model_id = "XuCluster/BgRemoval";
+
+        let url = format!(
+            "https://api-inference.huggingface.co/models/{}",
+            model_id
+        );
+
+        // Encode image to base64 for HF API
+        let image_b64 = base64::engine::general_purpose::STANDARD.encode(image_data);
+
+        let response = self
+            .http_client
+            .post(&url)
+            .header("Authorization", format!("Bearer {}", api_key))
+            .header("Content-Type", "application/json")
+            .json(&serde_json::json!({
+                "inputs": format!("data:image/png;base64,{}", image_b64)
+            }))
+            .send()
+            .await
+            .map_err(|e| ProviderError::NetworkError(e.to_string()))?;
+
+        let status = response.status();
+
+        if !status.is_success() {
+            return Err(map_huggingface_error(status.as_u16(), response.text().await.unwrap_or_default()).await);
+        }
+
+        let result_data = response
+            .bytes()
+            .await
+            .map_err(|e| ProviderError::NetworkError(e.to_string()))?
+            .to_vec();
+
+        Ok(ImageGenResult::new(result_data, 0, 0, "png"))
+    }
+
     fn metadata(&self) -> &ProviderMetadata {
         &self.metadata
     }

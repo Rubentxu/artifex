@@ -101,6 +101,18 @@ impl ImageProvider for KieImageProvider {
         ))
     }
 
+    async fn remove_background(
+        &self,
+        _image_data: &[u8],
+        _api_key: &str,
+    ) -> Result<ImageGenResult, ProviderError> {
+        // Kie AI does not support background removal
+        Err(ProviderError::ProviderSpecific(
+            "kie".to_string(),
+            "Kie AI does not support background removal. Please use Replicate or Fal.".to_string(),
+        ))
+    }
+
     fn metadata(&self) -> &ProviderMetadata {
         &self.metadata
     }

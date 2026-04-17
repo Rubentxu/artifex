@@ -73,6 +73,20 @@ impl ImageProvider for MockImageProvider {
         }
     }
 
+    async fn remove_background(
+        &self,
+        _image_data: &[u8],
+        _api_key: &str,
+    ) -> Result<ImageGenResult, ProviderError> {
+        self.call_count.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+        Ok(ImageGenResult::new(
+            vec![0, 1, 2, 3],
+            512,
+            512,
+            "png",
+        ))
+    }
+
     fn metadata(&self) -> &ProviderMetadata {
         &self.metadata
     }

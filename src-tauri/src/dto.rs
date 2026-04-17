@@ -181,6 +181,89 @@ fn default_dto_speed() -> Option<f32> {
     Some(1.0)
 }
 
+/// Request type for removing background from an image.
+#[derive(Debug, Clone, Deserialize)]
+pub struct RemoveBackgroundRequest {
+    pub project_id: String,
+    pub asset_id: String,
+    #[serde(default)]
+    pub provider_mode: Option<String>,
+}
+
+/// Request type for generating a tile.
+#[derive(Debug, Clone, Deserialize)]
+pub struct GenerateTileRequest {
+    pub project_id: String,
+    pub prompt: String,
+    #[serde(default = "default_tile_size")]
+    pub width: u32,
+    #[serde(default = "default_tile_size")]
+    pub height: u32,
+    #[serde(default)]
+    pub biome: Option<String>,
+    #[serde(default = "default_seamless")]
+    pub seamless: bool,
+}
+
+fn default_tile_size() -> u32 {
+    256
+}
+
+fn default_seamless() -> bool {
+    true
+}
+
+/// Palette mode for pixel art conversion.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(tag = "type", content = "colors")]
+pub enum PaletteMode {
+    /// Pico-8 palette (16 colors)
+    Pico8,
+    /// GameBoy palette (4 colors)
+    GameBoy,
+    /// NES palette (54 colors)
+    Nes,
+    /// Custom palette with specified colors
+    Custom(Vec<[u8; 3]>),
+}
+
+/// Dithering mode for pixel art conversion.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default)]
+#[serde(rename_all = "snake_case")]
+pub enum DitheringMode {
+    #[default]
+    None,
+    FloydSteinberg,
+    Bayer,
+    Atkinson,
+}
+
+/// Request type for converting an image to pixel art.
+#[derive(Debug, Clone, Deserialize)]
+pub struct ConvertPixelArtRequest {
+    pub project_id: String,
+    pub asset_id: String,
+    #[serde(default = "default_pixel_art_size")]
+    pub target_width: u32,
+    #[serde(default = "default_pixel_art_size")]
+    pub target_height: u32,
+    pub palette: PaletteMode,
+    #[serde(default)]
+    pub dithering: DitheringMode,
+    #[serde(default)]
+    pub outline: bool,
+    #[serde(default = "default_outline_threshold")]
+    pub outline_threshold: u8,
+}
+
+fn default_pixel_art_size() -> u32 {
+    64
+}
+
+fn default_outline_threshold() -> u8 {
+    128
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

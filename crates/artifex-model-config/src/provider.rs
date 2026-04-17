@@ -152,6 +152,8 @@ pub enum ModelCapability {
     CodeComplete,
     ImageEdit,
     VideoGen,
+    BackgroundRemoval,
+    TileGen,
 }
 
 impl ModelCapability {
@@ -165,6 +167,8 @@ impl ModelCapability {
             ModelCapability::CodeComplete => "code_complete",
             ModelCapability::ImageEdit => "image_edit",
             ModelCapability::VideoGen => "video_gen",
+            ModelCapability::BackgroundRemoval => "background_removal",
+            ModelCapability::TileGen => "tile_gen",
         }
     }
 }

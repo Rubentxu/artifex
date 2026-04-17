@@ -327,6 +327,19 @@ mod tests {
             ))
         }
 
+        async fn remove_background(
+            &self,
+            _image_data: &[u8],
+            _api_key: &str,
+        ) -> Result<crate::image_provider::ImageGenResult, ProviderError> {
+            Ok(crate::image_provider::ImageGenResult::new(
+                vec![0, 1, 2],
+                512,
+                512,
+                "png",
+            ))
+        }
+
         fn metadata(&self) -> &ProviderMetadata {
             &self.metadata
         }

@@ -146,6 +146,77 @@ impl ImageProvider for FalImageProvider {
         ))
     }
 
+    async fn remove_background(
+        &self,
+        image_data: &[u8],
+        api_key: &str,
+    ) -> Result<ImageGenResult, ProviderError> {
+        use base64::Engine;
+        // Fal has a background removal endpoint
+        let model_id = "fal-ai/rmbg";
+
+        // Encode image to base64
+        let image_b64 = base64::engine::general_purpose::STANDARD.encode(image_data);
+
+        // Create request for background removal
+        let request_body = serde_json::json!({
+            "model": model_id,
+            "input": {
+                "image_url": format!("data:image/png;base64,{}", image_b64)
+            }
+        });
+
+        // Submit to queue
+        let response = self
+            .http_client
+            .post(format!("https://queue.fal.run/{}", model_id))
+            .header("Authorization", format!("Key {}", api_key))
+            .header("Content-Type", "application/json")
+            .json(&request_body)
+            .send()
+            .await
+            .map_err(|e| ProviderError::NetworkError(e.to_string()))?;
+
+        if !response.status().is_success() {
+            return Err(map_fal_error(response.status().as_u16(), response.text().await.unwrap_or_default()).await);
+        }
+
+        let queue_response: FalQueueResponse = response
+            .json()
+            .await
+            .map_err(|e| ProviderError::ProviderSpecific("fal".to_string(), e.to_string()))?;
+
+        // Poll for completion
+        let final_result = self.poll_result(&queue_response.request_id, api_key).await?;
+
+        // Fetch the actual image data
+        let image_url = final_result
+            .images
+            .first()
+            .map(|img| img.url.as_str())
+            .ok_or_else(|| {
+                ProviderError::ProviderSpecific(
+                    "fal".to_string(),
+                    "No images in response".to_string(),
+                )
+            })?;
+
+        let image_response = self
+            .http_client
+            .get(image_url)
+            .send()
+            .await
+            .map_err(|e| ProviderError::NetworkError(e.to_string()))?;
+
+        let result_data = image_response
+            .bytes()
+            .await
+            .map_err(|e| ProviderError::NetworkError(e.to_string()))?
+            .to_vec();
+
+        Ok(ImageGenResult::new(result_data, 0, 0, "png"))
+    }
+
     fn metadata(&self) -> &ProviderMetadata {
         &self.metadata
     }

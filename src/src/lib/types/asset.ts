@@ -64,3 +64,37 @@ export interface TtsParams {
   similarity_boost?: number;
   output_format?: string;
 }
+
+export interface RemoveBackgroundRequest {
+  project_id: string;
+  asset_id: string;
+  provider_mode?: string;
+}
+
+export interface ConvertPixelArtRequest {
+  project_id: string;
+  asset_id: string;
+  target_width: number;
+  target_height: number;
+  palette: PaletteMode;
+  dithering: DitheringMode;
+  outline: boolean;
+  outline_threshold?: number;
+}
+
+export type PaletteMode =
+  | { type: 'Pico8' }
+  | { type: 'GameBoy' }
+  | { type: 'Nes' }
+  | { type: 'Custom'; colors: [number, number, number][] };
+
+export type DitheringMode = 'none' | 'floyd_steinberg' | 'bayer' | 'atkinson';
+
+export interface GenerateTileRequest {
+  project_id: string;
+  prompt: string;
+  width?: number;
+  height?: number;
+  biome?: string;
+  seamless?: boolean;
+}

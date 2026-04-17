@@ -5,6 +5,9 @@
   import AssetCard from '$lib/components/AssetCard.svelte';
   import GenerateImageDialog from '$lib/components/GenerateImageDialog.svelte';
   import GenerateAudioDialog from '$lib/components/GenerateAudioDialog.svelte';
+  import GenerateTileDialog from '$lib/components/GenerateTileDialog.svelte';
+  import RemoveBackgroundDialog from '$lib/components/RemoveBackgroundDialog.svelte';
+  import ConvertPixelArtDialog from '$lib/components/ConvertPixelArtDialog.svelte';
   import JobHistoryPanel from '$lib/components/JobHistoryPanel.svelte';
   import { open } from '@tauri-apps/plugin-dialog';
   import type { AssetKind } from '$lib/types/asset';
@@ -16,6 +19,10 @@
 
   let showGenerateImageDialog = $state(false);
   let showGenerateAudioDialog = $state(false);
+  let showGenerateTileDialog = $state(false);
+  let showRemoveBackgroundDialog = $state(false);
+  let showConvertPixelArtDialog = $state(false);
+  let selectedAssetIdForAction = $state<string | null>(null);
   let importError = $state<string | null>(null);
   let unlistenJobCompleted: (() => void) | null = null;
 
@@ -89,6 +96,16 @@
       importError = e instanceof Error ? e.message : String(e);
     }
   }
+
+  function handleRemoveBackground(assetId: string) {
+    selectedAssetIdForAction = assetId;
+    showRemoveBackgroundDialog = true;
+  }
+
+  function handleConvertPixelArt(assetId: string) {
+    selectedAssetIdForAction = assetId;
+    showConvertPixelArtDialog = true;
+  }
 </script>
 
 <div class="h-full flex flex-col overflow-hidden">
@@ -119,6 +136,17 @@
         Generate Audio
       </button>
       <button
+        onclick={() => (showGenerateTileDialog = true)}
+        class="flex items-center gap-2 px-4 py-2 bg-[var(--color-surface)] hover:bg-[var(--color-surface)]/80 rounded-lg transition-colors font-medium"
+        disabled={!$selectedProject}
+        title={$selectedProject ? '' : 'Select a project first'}
+      >
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" />
+        </svg>
+        Generate Tile
+      </button>
+      <button
         onclick={handleImport}
         class="flex items-center gap-2 px-4 py-2 bg-[var(--color-surface)] hover:bg-[var(--color-surface)]/80 rounded-lg transition-colors font-medium"
         disabled={!$selectedProject}
@@ -146,6 +174,37 @@
       </button>
     {/each}
   </div>
+
+  <!-- Selected Asset Actions -->
+  {#if $selectedProject && $assetStore.selectedId}
+    {@const selectedAssetData = $filteredAssets.find(a => a.id === $assetStore.selectedId)}
+    {#if selectedAssetData && (selectedAssetData.kind === 'Image' || selectedAssetData.kind === 'Sprite' || selectedAssetData.kind === 'Tileset' || selectedAssetData.kind === 'Material')}
+      <div class="flex items-center gap-2 px-6 py-2 bg-[var(--color-accent)]/10 border-b border-[var(--color-accent)]/20">
+        <span class="text-sm text-[var(--color-accent)] font-medium">Selected:</span>
+        <span class="text-sm truncate max-w-xs">{selectedAssetData.name}</span>
+        <div class="flex items-center gap-2 ml-auto">
+          <button
+            onclick={() => handleRemoveBackground($assetStore.selectedId!)}
+            class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--color-surface)] hover:bg-[var(--color-surface)]/80 transition-colors text-sm font-medium"
+          >
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+            Remove Background
+          </button>
+          <button
+            onclick={() => handleConvertPixelArt($assetStore.selectedId!)}
+            class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--color-surface)] hover:bg-[var(--color-surface)]/80 transition-colors text-sm font-medium"
+          >
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" />
+            </svg>
+            Convert to Pixel Art
+          </button>
+        </div>
+      </div>
+    {/if}
+  {/if}
 
   <!-- Error display -->
   {#if importError}
@@ -213,6 +272,15 @@
             </svg>
             Generate Audio
           </button>
+          <button
+            onclick={() => (showGenerateTileDialog = true)}
+            class="flex items-center gap-2 px-4 py-2 bg-[var(--color-surface)] hover:bg-[var(--color-surface)]/80 rounded-lg transition-colors font-medium"
+          >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" />
+            </svg>
+            Generate Tile
+          </button>
         </div>
       </div>
     {/if}
@@ -239,5 +307,40 @@
     open={showGenerateAudioDialog}
     projectId={$selectedProject.id}
     onclose={() => (showGenerateAudioDialog = false)}
+  />
+{/if}
+
+<!-- Generate Tile Dialog -->
+{#if showGenerateTileDialog && $selectedProject}
+  <GenerateTileDialog
+    open={showGenerateTileDialog}
+    projectId={$selectedProject.id}
+    onclose={() => (showGenerateTileDialog = false)}
+  />
+{/if}
+
+<!-- Remove Background Dialog -->
+{#if showRemoveBackgroundDialog && $selectedProject && selectedAssetIdForAction}
+  <RemoveBackgroundDialog
+    open={showRemoveBackgroundDialog}
+    projectId={$selectedProject.id}
+    assetId={selectedAssetIdForAction}
+    onclose={() => {
+      showRemoveBackgroundDialog = false;
+      selectedAssetIdForAction = null;
+    }}
+  />
+{/if}
+
+<!-- Convert Pixel Art Dialog -->
+{#if showConvertPixelArtDialog && $selectedProject && selectedAssetIdForAction}
+  <ConvertPixelArtDialog
+    open={showConvertPixelArtDialog}
+    projectId={$selectedProject.id}
+    assetId={selectedAssetIdForAction}
+    onclose={() => {
+      showConvertPixelArtDialog = false;
+      selectedAssetIdForAction = null;
+    }}
   />
 {/if}

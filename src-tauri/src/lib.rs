@@ -17,9 +17,10 @@ use tauri::Manager;
 
 use application::{AssetApplicationService, JobApplicationService, ProjectApplicationService};
 use commands::{
-    archive_project, cancel_job, create_job, create_project, delete_asset, delete_project,
-    generate_audio, generate_image, get_asset, get_job, get_project, import_asset, list_assets,
-    list_jobs, list_projects, open_project, register_asset, rename_project, synthesize_speech,
+    archive_project, cancel_job, convert_pixel_art, create_job, create_project, delete_asset,
+    delete_project, generate_audio, generate_image, generate_tile, get_asset, get_job, get_project,
+    import_asset, list_assets, list_jobs, list_projects, open_project, register_asset,
+    remove_background, rename_project, synthesize_speech,
 };
 use model_config::{
     list_model_profiles, create_model_profile, update_model_profile, delete_model_profile,
@@ -33,7 +34,7 @@ use artifex_model_config::credential_store::CredentialStore;
 use artifex_model_config::ModelRouter;
 use repositories::{SqliteAssetRepository, SqliteJobRepository, SqliteProjectRepository};
 use state::AppState;
-use workers::{AudioGenWorker, ImageGenWorker, WorkerRunner};
+use workers::{AudioGenWorker, ImageGenWorker, ImageProcessWorker, TileWorker, WorkerRunner};
 
 /// Attempts to create a keychain credential store.
 ///
@@ -130,13 +131,23 @@ pub fn run_app() {
                 credential_store.clone(),
                 assets_dir.clone(),
             ));
+            let image_process_worker = Arc::new(ImageProcessWorker::new(
+                model_router.clone(),
+                credential_store.clone(),
+                assets_dir.clone(),
+            ));
+            let tile_worker = Arc::new(TileWorker::new(
+                model_router.clone(),
+                credential_store.clone(),
+                assets_dir.clone(),
+            ));
             let audio_worker = Arc::new(AudioGenWorker::new(
                 model_router.clone(),
                 credential_store.clone(),
                 assets_dir.clone(),
             ));
             let worker_runner = WorkerRunner::with_app_handle(
-                vec![image_worker, audio_worker],
+                vec![image_worker, image_process_worker, tile_worker, audio_worker],
                 job_repo.clone(),
                 asset_service.clone(),
                 app.handle().clone(),
@@ -190,6 +201,9 @@ pub fn run_app() {
             delete_asset,
             import_asset,
             register_asset,
+            remove_background,
+            convert_pixel_art,
+            generate_tile,
             // Model config commands
             list_providers,
             get_provider,
