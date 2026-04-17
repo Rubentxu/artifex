@@ -31,7 +31,10 @@ impl TogetherTextProvider {
                 name: "Together AI".to_string(),
                 kind: ProviderKind::Together,
                 base_url: "https://api.together.xyz/v1".to_string(),
-                supported_capabilities: vec![ModelCapability::TextComplete],
+                supported_capabilities: vec![
+                    ModelCapability::TextComplete,
+                    ModelCapability::CodeComplete,
+                ],
                 auth_type: AuthType::ApiKey,
             },
         }
@@ -47,7 +50,10 @@ impl TogetherTextProvider {
                 name: "Together AI".to_string(),
                 kind: ProviderKind::Together,
                 base_url: "https://api.together.xyz/v1".to_string(),
-                supported_capabilities: vec![ModelCapability::TextComplete],
+                supported_capabilities: vec![
+                    ModelCapability::TextComplete,
+                    ModelCapability::CodeComplete,
+                ],
                 auth_type: AuthType::ApiKey,
             },
         }
@@ -64,7 +70,10 @@ impl TogetherTextProvider {
                 name: "Together AI".to_string(),
                 kind: ProviderKind::Together,
                 base_url: "https://api.together.xyz/v1".to_string(),
-                supported_capabilities: vec![ModelCapability::TextComplete],
+                supported_capabilities: vec![
+                    ModelCapability::TextComplete,
+                    ModelCapability::CodeComplete,
+                ],
                 auth_type: AuthType::ApiKey,
             },
         }

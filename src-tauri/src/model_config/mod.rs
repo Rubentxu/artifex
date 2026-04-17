@@ -3,12 +3,14 @@
 //! This module provides model profile management, routing rules,
 //! prompt templates, and provider adapters for AI services.
 
+pub mod built_in_templates;
 pub mod commands;
 pub mod keychain_store;
 pub mod providers;
 pub mod repository;
 pub mod service;
 
+pub use built_in_templates::{built_in_templates, templates_for_engine, BuiltInTemplate};
 pub use commands::{
     create_model_profile, create_prompt_template, delete_credential,
     delete_model_profile, delete_prompt_template, get_credential_status,

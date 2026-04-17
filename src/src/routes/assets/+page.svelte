@@ -10,6 +10,7 @@
   import SliceSpriteSheetDialog from '$lib/components/SliceSpriteSheetDialog.svelte';
   import RemoveBackgroundDialog from '$lib/components/RemoveBackgroundDialog.svelte';
   import ConvertPixelArtDialog from '$lib/components/ConvertPixelArtDialog.svelte';
+  import GenerateCodeDialog from '$lib/components/GenerateCodeDialog.svelte';
   import JobHistoryPanel from '$lib/components/JobHistoryPanel.svelte';
   import { open } from '@tauri-apps/plugin-dialog';
   import type { AssetKind, AssetResponse } from '$lib/types/asset';
@@ -26,11 +27,12 @@
   let showSliceSpriteSheetDialog = $state(false);
   let showRemoveBackgroundDialog = $state(false);
   let showConvertPixelArtDialog = $state(false);
+  let showGenerateCodeDialog = $state(false);
   let selectedAssetIdForAction = $state<string | null>(null);
   let importError = $state<string | null>(null);
   let unlistenJobCompleted: (() => void) | null = null;
 
-  const filterKinds: (AssetKind | 'All')[] = ['All', 'Image', 'Sprite', 'Tileset', 'Material', 'Audio', 'Voice', 'Video', 'Other'];
+  const filterKinds: (AssetKind | 'All')[] = ['All', 'Image', 'Sprite', 'Tileset', 'Material', 'Audio', 'Voice', 'Video', 'Code', 'Other'];
 
   // Derived list of video assets for sprite sheet generation
   let videoAssets: AssetResponse[] = $derived($assetStore.assets.filter(a => a.kind === 'Video'));
@@ -185,6 +187,17 @@
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" />
         </svg>
         Slice Sprite Sheet
+      </button>
+      <button
+        onclick={() => (showGenerateCodeDialog = true)}
+        class="flex items-center gap-2 px-4 py-2 bg-[var(--color-surface)] hover:bg-[var(--color-surface)]/80 rounded-lg transition-colors font-medium"
+        disabled={!$selectedProject}
+        title={$selectedProject ? '' : 'Select a project first'}
+      >
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+        </svg>
+        Generate Code
       </button>
       <button
         onclick={handleImport}
@@ -402,5 +415,14 @@
       showConvertPixelArtDialog = false;
       selectedAssetIdForAction = null;
     }}
+  />
+{/if}
+
+<!-- Generate Code Dialog -->
+{#if showGenerateCodeDialog && $selectedProject}
+  <GenerateCodeDialog
+    open={showGenerateCodeDialog}
+    projectId={$selectedProject.id}
+    onclose={() => (showGenerateCodeDialog = false)}
   />
 {/if}

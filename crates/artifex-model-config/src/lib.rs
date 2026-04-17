@@ -23,7 +23,7 @@ pub use model_profile::{ModelProfile, PricingTier};
 pub use prompt_template::PromptTemplate;
 pub use provider::{ProviderError, ProviderKind, ModelCapability, ProviderMetadata, AuthType};
 pub use registry::{ProviderRegistry, RegistryError};
-pub use router::{ModelRouter, ModelConfigRepository, ResolvedModelProfile, ResolvedAudioProfile, ResolvedTtsProfile, RoutingError};
+pub use router::{ModelRouter, ModelConfigRepository, ResolvedModelProfile, ResolvedAudioProfile, ResolvedTtsProfile, ResolvedTextProfile, RoutingError};
 pub use routing_rule::RoutingRule;
 pub use text_provider::{TextParams, TextResult, TextProvider};
 pub use tts_provider::{TtsParams, TtsResult, TtsProvider};

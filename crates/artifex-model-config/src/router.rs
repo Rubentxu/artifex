@@ -9,6 +9,7 @@ use super::image_provider::ImageProvider;
 use super::model_profile::ModelProfile;
 use super::registry::ProviderRegistry;
 use super::routing_rule::{RoutingRule, MAX_FALLBACK_DEPTH};
+use super::text_provider::TextProvider;
 use super::tts_provider::TtsProvider;
 use super::credential_store::CredentialStore;
 
@@ -56,6 +57,14 @@ pub struct ResolvedTtsProfile {
     pub profile: Arc<ModelProfile>,
     /// The provider instance.
     pub provider: Arc<dyn TtsProvider>,
+}
+
+/// A resolved text profile with its associated provider.
+pub struct ResolvedTextProfile {
+    /// The model profile.
+    pub profile: Arc<ModelProfile>,
+    /// The provider instance.
+    pub provider: Arc<dyn TextProvider>,
 }
 
 /// Repository trait for model configuration storage.
@@ -261,6 +270,103 @@ impl ModelRouter {
 
         Err(RoutingError::NoAvailableProfile(operation_type.to_string()))
     }
+
+    /// Resolves the best model profile for a text generation operation.
+    ///
+    /// Tries the default profile first, then falls back to alternatives in order.
+    pub async fn resolve_text(
+        &self,
+        operation_type: &str,
+    ) -> Result<ResolvedTextProfile, RoutingError> {
+        let rule = self
+            .repo
+            .find_rule(operation_type)
+            .await
+            .map_err(|e| RoutingError::NoRuleForOperation(e.to_string()))?
+            .ok_or_else(|| RoutingError::NoRuleForOperation(operation_type.to_string()))?;
+
+        // Try each profile in order
+        let mut fallbacks_exhausted = 0;
+        for profile_id in rule.profile_ids() {
+            if fallbacks_exhausted >= MAX_FALLBACK_DEPTH {
+                return Err(RoutingError::MaxFallbackDepthExceeded);
+            }
+
+            let profile = self
+                .repo
+                .find_profile(profile_id)
+                .await
+                .map_err(|e| RoutingError::ProfileNotFound(e.to_string()))?
+                .ok_or_else(|| RoutingError::ProfileNotFound(profile_id.to_string()))?;
+
+            if !profile.enabled {
+                fallbacks_exhausted += 1;
+                continue;
+            }
+
+            let provider = self
+                .registry
+                .get_text(&profile.provider_name)
+                .ok_or_else(|| {
+                    RoutingError::ProviderNotRegistered(profile.provider_name.clone())
+                })?;
+
+            // Verify credential exists
+            let credential_id = format!("{}::api_key", profile.provider_name);
+            if self.credential_store.get(&credential_id).is_err() {
+                fallbacks_exhausted += 1;
+                continue;
+            }
+
+            return Ok(ResolvedTextProfile {
+                profile: Arc::new(profile),
+                provider,
+            });
+        }
+
+        Err(RoutingError::NoAvailableProfile(operation_type.to_string()))
+    }
+
+    /// Resolves a text provider by specific profile ID.
+    ///
+    /// This bypasses routing rules and directly uses the specified profile.
+    /// Returns error if profile is not found, not enabled, or no credential available.
+    pub async fn resolve_text_by_profile_id(
+        &self,
+        profile_id: &uuid::Uuid,
+    ) -> Result<ResolvedTextProfile, RoutingError> {
+        let profile = self
+            .repo
+            .find_profile(profile_id)
+            .await
+            .map_err(|e| RoutingError::ProfileNotFound(e.to_string()))?
+            .ok_or_else(|| RoutingError::ProfileNotFound(profile_id.to_string()))?;
+
+        if !profile.enabled {
+            return Err(RoutingError::ProfileNotFound(format!(
+                "Profile {} is not enabled",
+                profile_id
+            )));
+        }
+
+        let provider = self
+            .registry
+            .get_text(&profile.provider_name)
+            .ok_or_else(|| {
+                RoutingError::ProviderNotRegistered(profile.provider_name.clone())
+            })?;
+
+        // Verify credential exists
+        let credential_id = format!("{}::api_key", profile.provider_name);
+        if self.credential_store.get(&credential_id).is_err() {
+            return Err(RoutingError::CredentialNotFound(profile.provider_name));
+        }
+
+        Ok(ResolvedTextProfile {
+            profile: Arc::new(profile),
+            provider,
+        })
+    }
 }
 
 #[cfg(test)]
@@ -415,6 +521,45 @@ mod tests {
                 vec![0, 1, 2],
                 5.0,
                 "mp3",
+            ))
+        }
+
+        fn metadata(&self) -> &ProviderMetadata {
+            &self.metadata
+        }
+    }
+
+    /// Mock text provider for testing.
+    struct MockTextProvider {
+        metadata: ProviderMetadata,
+    }
+
+    impl MockTextProvider {
+        fn new(name: &str) -> Self {
+            Self {
+                metadata: ProviderMetadata {
+                    id: name.to_string(),
+                    name: name.to_string(),
+                    kind: ProviderKind::Together,
+                    base_url: format!("https://api.{}.com", name),
+                    supported_capabilities: vec![ModelCapability::TextComplete],
+                    auth_type: AuthType::ApiKey,
+                },
+            }
+        }
+    }
+
+    #[async_trait]
+    impl TextProvider for MockTextProvider {
+        async fn complete(
+            &self,
+            _params: &crate::text_provider::TextParams,
+            _api_key: &str,
+        ) -> Result<crate::text_provider::TextResult, ProviderError> {
+            Ok(crate::text_provider::TextResult::new(
+                "Hello, world!".to_string(),
+                50,
+                false,
             ))
         }
 
@@ -643,6 +788,62 @@ mod tests {
             .unwrap()
             .block_on(async {
                 let result = router.resolve_tts("unknown.op").await;
+                assert!(matches!(result, Err(RoutingError::NoRuleForOperation(_))));
+            });
+    }
+
+    #[test]
+    fn test_resolve_text_success() {
+        let profile = ModelProfile::new(
+            "together".to_string(),
+            "meta-llama/Llama-3-70b-chat-hf".to_string(),
+            "Together AI Text".to_string(),
+            vec![ModelCapability::TextComplete],
+        );
+
+        let rule = RoutingRule::new(
+            "codegen.godot".to_string(),
+            profile.id,
+            vec![],
+        );
+
+        let repo = Arc::new(MockRepository::new(vec![profile.clone()], vec![rule]));
+        let registry = Arc::new(ProviderRegistry::new());
+        let cred_store = Arc::new(crate::credential_store::InMemoryCredentialStore::new());
+
+        // Register provider
+        let provider = Arc::new(MockTextProvider::new("together"));
+        registry.register_text("together", provider).unwrap();
+
+        // Set credential
+        cred_store.set("together::api_key", "test-key").unwrap();
+
+        let router = ModelRouter::new(registry.clone(), repo.clone(), cred_store);
+
+        tokio::runtime::Builder::new_current_thread()
+            .enable_all()
+            .build()
+            .unwrap()
+            .block_on(async {
+                let resolved = router.resolve_text("codegen.godot").await.unwrap();
+                assert_eq!(resolved.profile.model_id, "meta-llama/Llama-3-70b-chat-hf");
+            });
+    }
+
+    #[test]
+    fn test_resolve_text_no_rule() {
+        let repo = Arc::new(MockRepository::new(vec![], vec![]));
+        let registry = Arc::new(ProviderRegistry::new());
+        let cred_store = Arc::new(crate::credential_store::InMemoryCredentialStore::new());
+
+        let router = ModelRouter::new(registry.clone(), repo.clone(), cred_store);
+
+        tokio::runtime::Builder::new_current_thread()
+            .enable_all()
+            .build()
+            .unwrap()
+            .block_on(async {
+                let result = router.resolve_text("unknown.op").await;
                 assert!(matches!(result, Err(RoutingError::NoRuleForOperation(_))));
             });
     }

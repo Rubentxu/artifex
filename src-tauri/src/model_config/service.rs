@@ -22,6 +22,7 @@ use super::commands::ProviderDto;
 use crate::model_config::providers::{
     ElevenLabsProvider, FalImageProvider,
     HuggingFaceImageProvider, KieImageProvider, ReplicateImageProvider,
+    TogetherTextProvider,
 };
 
 /// Credential status for a provider.
@@ -338,9 +339,10 @@ pub fn register_builtin_providers(registry: &ProviderRegistry) {
     }
 
     // Together Text Provider
-    // Note: TogetherTextProvider implements TextProvider, not ImageProvider
-    // For now, we only register image providers in the registry
-    // Future: add text provider registry
+    let together = Arc::new(TogetherTextProvider::new());
+    if let Err(e) = registry.register_text("together", together) {
+        tracing::warn!("Failed to register together text provider: {}", e);
+    }
 }
 
 #[cfg(test)]

@@ -8,6 +8,7 @@ use thiserror::Error;
 use super::audio_provider::AudioProvider;
 use super::image_provider::ImageProvider;
 use super::provider::ProviderMetadata;
+use super::text_provider::TextProvider;
 use super::tts_provider::TtsProvider;
 
 /// Errors that can occur when registering or accessing providers.
@@ -25,6 +26,7 @@ pub struct ProviderRegistry {
     image_providers: DashMap<String, Arc<dyn ImageProvider>>,
     audio_providers: DashMap<String, Arc<dyn AudioProvider>>,
     tts_providers: DashMap<String, Arc<dyn TtsProvider>>,
+    text_providers: DashMap<String, Arc<dyn TextProvider>>,
 }
 
 impl ProviderRegistry {
@@ -34,6 +36,7 @@ impl ProviderRegistry {
             image_providers: DashMap::new(),
             audio_providers: DashMap::new(),
             tts_providers: DashMap::new(),
+            text_providers: DashMap::new(),
         }
     }
 
@@ -124,16 +127,49 @@ impl ProviderRegistry {
             .collect()
     }
 
+    /// Registers a text provider by its canonical id.
+    ///
+    /// # Errors
+    /// Returns `RegistryError::AlreadyRegistered` if a provider with the same id exists.
+    pub fn register_text(
+        &self,
+        id: &str,
+        provider: Arc<dyn TextProvider>,
+    ) -> Result<(), RegistryError> {
+        if self.text_providers.contains_key(id) {
+            return Err(RegistryError::AlreadyRegistered(id.to_string()));
+        }
+        self.text_providers.insert(id.to_string(), provider);
+        Ok(())
+    }
+
+    /// Gets a text provider by its canonical id.
+    pub fn get_text(&self, id: &str) -> Option<Arc<dyn TextProvider>> {
+        self.text_providers.get(id).map(|r| r.value().clone())
+    }
+
+    /// Lists all registered text providers.
+    pub fn list_text_providers(&self) -> Vec<ProviderMetadata> {
+        self.text_providers
+            .iter()
+            .map(|r| r.value().metadata().clone())
+            .collect()
+    }
+
     /// Checks if a provider is registered by its canonical id.
     pub fn is_registered(&self, id: &str) -> bool {
         self.image_providers.contains_key(id)
             || self.audio_providers.contains_key(id)
             || self.tts_providers.contains_key(id)
+            || self.text_providers.contains_key(id)
     }
 
     /// Returns the total number of registered providers.
     pub fn len(&self) -> usize {
-        self.image_providers.len() + self.audio_providers.len() + self.tts_providers.len()
+        self.image_providers.len()
+            + self.audio_providers.len()
+            + self.tts_providers.len()
+            + self.text_providers.len()
     }
 
     /// Returns true if no providers are registered.
@@ -141,6 +177,7 @@ impl ProviderRegistry {
         self.image_providers.is_empty()
             && self.audio_providers.is_empty()
             && self.tts_providers.is_empty()
+            && self.text_providers.is_empty()
     }
 }
 
@@ -287,6 +324,45 @@ mod tests {
         }
     }
 
+    /// A mock text provider for testing.
+    struct MockTextProvider {
+        metadata: ProviderMetadata,
+    }
+
+    impl MockTextProvider {
+        fn new(name: &str) -> Self {
+            Self {
+                metadata: ProviderMetadata {
+                    id: name.to_string(),
+                    name: name.to_string(),
+                    kind: ProviderKind::Together,
+                    base_url: format!("https://api.{}.com", name),
+                    supported_capabilities: vec![ModelCapability::TextComplete],
+                    auth_type: AuthType::ApiKey,
+                },
+            }
+        }
+    }
+
+    #[async_trait]
+    impl TextProvider for MockTextProvider {
+        async fn complete(
+            &self,
+            _params: &crate::text_provider::TextParams,
+            _api_key: &str,
+        ) -> Result<crate::text_provider::TextResult, crate::provider::ProviderError> {
+            Ok(crate::text_provider::TextResult::new(
+                "Hello, world!".to_string(),
+                50,
+                false,
+            ))
+        }
+
+        fn metadata(&self) -> &ProviderMetadata {
+            &self.metadata
+        }
+    }
+
     #[test]
     fn test_registry_register_and_get_image() {
         let registry = ProviderRegistry::new();
@@ -319,6 +395,17 @@ mod tests {
 
         let retrieved = registry.get_tts("elevenlabs").unwrap();
         assert_eq!(retrieved.metadata().id, "elevenlabs");
+    }
+
+    #[test]
+    fn test_registry_register_text_and_get() {
+        let registry = ProviderRegistry::new();
+
+        let provider = Arc::new(MockTextProvider::new("together"));
+        registry.register_text("together", provider.clone()).unwrap();
+
+        let retrieved = registry.get_text("together").unwrap();
+        assert_eq!(retrieved.metadata().id, "together");
     }
 
     #[test]
@@ -377,6 +464,17 @@ mod tests {
     }
 
     #[test]
+    fn test_registry_list_text_providers() {
+        let registry = ProviderRegistry::new();
+
+        let provider = Arc::new(MockTextProvider::new("together"));
+        registry.register_text("together", provider).unwrap();
+
+        let list = registry.list_text_providers();
+        assert_eq!(list.len(), 1);
+    }
+
+    #[test]
     fn test_registry_is_registered() {
         let registry = ProviderRegistry::new();
 
@@ -389,9 +487,13 @@ mod tests {
         let tts_provider = Arc::new(MockTtsProvider::new("elevenlabs_tts"));
         registry.register_tts("elevenlabs_tts", tts_provider).unwrap();
 
+        let text_provider = Arc::new(MockTextProvider::new("together"));
+        registry.register_text("together", text_provider).unwrap();
+
         assert!(registry.is_registered("replicate"));
         assert!(registry.is_registered("elevenlabs"));
         assert!(registry.is_registered("elevenlabs_tts"));
+        assert!(registry.is_registered("together"));
         assert!(!registry.is_registered("nonexistent"));
     }
 
@@ -411,7 +513,10 @@ mod tests {
         let tts_provider = Arc::new(MockTtsProvider::new("elevenlabs_tts"));
         registry.register_tts("elevenlabs_tts", tts_provider).unwrap();
 
+        let text_provider = Arc::new(MockTextProvider::new("together"));
+        registry.register_text("together", text_provider).unwrap();
+
         assert!(!registry.is_empty());
-        assert_eq!(registry.len(), 3);
+        assert_eq!(registry.len(), 4);
     }
 }

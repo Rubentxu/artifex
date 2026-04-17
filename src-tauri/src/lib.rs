@@ -18,8 +18,8 @@ use tauri::Manager;
 use application::{AssetApplicationService, JobApplicationService, ProjectApplicationService};
 use commands::{
     archive_project, cancel_job, convert_pixel_art, create_job, create_project, delete_asset,
-    delete_project, generate_audio, generate_image, generate_sprite_sheet, generate_tile, get_asset, get_job, get_project,
-    import_asset, list_assets, list_jobs, list_projects, open_project, register_asset,
+    delete_project, generate_audio, generate_code, generate_image, generate_sprite_sheet, generate_tile, get_asset, get_job, get_project,
+    import_asset, list_assets, list_code_templates, list_jobs, list_projects, open_project, register_asset,
     remove_background, rename_project, slice_sprite_sheet, synthesize_speech,
 };
 use model_config::{
@@ -34,7 +34,7 @@ use artifex_model_config::credential_store::CredentialStore;
 use artifex_model_config::ModelRouter;
 use repositories::{SqliteAssetRepository, SqliteJobRepository, SqliteProjectRepository};
 use state::AppState;
-use workers::{AudioGenWorker, ImageGenWorker, ImageProcessWorker, SliceWorker, SpriteWorker, TileWorker, WorkerRunner};
+use workers::{AudioGenWorker, CodeWorker, ImageGenWorker, ImageProcessWorker, SliceWorker, SpriteWorker, TileWorker, WorkerRunner};
 
 /// Attempts to create a keychain credential store.
 ///
@@ -148,8 +148,13 @@ pub fn run_app() {
             ));
             let sprite_worker = Arc::new(SpriteWorker::new(assets_dir.clone()));
             let slice_worker = Arc::new(SliceWorker::new(assets_dir.clone()));
+            let code_worker = Arc::new(CodeWorker::new(
+                assets_dir.clone(),
+                model_router.clone(),
+                credential_store.clone(),
+            ));
             let worker_runner = WorkerRunner::with_app_handle(
-                vec![image_worker, image_process_worker, tile_worker, audio_worker, sprite_worker, slice_worker],
+                vec![image_worker, image_process_worker, tile_worker, audio_worker, sprite_worker, slice_worker, code_worker],
                 job_repo.clone(),
                 asset_service.clone(),
                 app.handle().clone(),
@@ -208,6 +213,8 @@ pub fn run_app() {
             generate_tile,
             generate_sprite_sheet,
             slice_sprite_sheet,
+            generate_code,
+            list_code_templates,
             // Model config commands
             list_providers,
             get_provider,

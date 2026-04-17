@@ -3,6 +3,7 @@
 //! Contains the worker traits and implementations for processing jobs.
 
 pub mod traits;
+pub mod code_worker;
 pub mod image_gen_provider;
 pub mod image_gen_worker;
 pub mod image_process_worker;
@@ -13,6 +14,7 @@ pub mod audio_gen_worker;
 pub mod runner;
 
 pub use traits::{JobFuture, JobResult, JobWorker};
+pub use code_worker::{CodeWorker, CodeGenOperation, CodeFile};
 pub use image_gen_provider::{ImageGenParams, ImageGenProvider, ImageGenResult};
 pub use image_gen_worker::ImageGenWorker;
 pub use image_process_worker::ImageProcessWorker;

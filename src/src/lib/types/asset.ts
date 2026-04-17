@@ -1,6 +1,33 @@
 // Asset types matching Rust DTOs (camelCase for JSON)
 
-export type AssetKind = 'Image' | 'Sprite' | 'Tileset' | 'Material' | 'Audio' | 'Voice' | 'Video' | 'Other';
+export type AssetKind = 'Image' | 'Sprite' | 'Tileset' | 'Material' | 'Audio' | 'Voice' | 'Video' | 'Code' | 'Other';
+
+export type CodeEngine = 'godot' | 'unity';
+
+export interface GenerateCodeRequest {
+  projectId: string;
+  engine: CodeEngine;
+  prompt: string;
+  templateId?: string;
+  modelId?: string;
+  temperature?: number;
+  maxTokens?: number;
+}
+
+export interface CodeFileOutput {
+  path: string;
+  language: string;
+  description: string;
+  content: string;
+}
+
+export interface CodeTemplate {
+  id: string;
+  name: string;
+  description: string;
+  engine: string;
+  variables: string[];
+}
 
 export interface AssetResponse {
   id: string;

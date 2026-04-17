@@ -831,5 +831,28 @@ pub async fn seed_defaults(pool: &SqlitePool) -> Result<(), ArtifexError> {
         let _ = create_rule(pool, &rule).await;
     }
 
+    // Seed code generation routing rules using the existing TextComplete profile
+    let all_profiles = list_profiles(pool).await?;
+    if let Some(text_profile) = all_profiles.iter().find(|p| {
+        p.capabilities
+            .contains(&ModelCapability::TextComplete)
+    }) {
+        let codegen_rules = vec![
+            RoutingRule::new(
+                "codegen.godot".to_string(),
+                text_profile.id,
+                vec![],
+            ),
+            RoutingRule::new(
+                "codegen.unity".to_string(),
+                text_profile.id,
+                vec![],
+            ),
+        ];
+        for rule in codegen_rules {
+            let _ = create_rule(pool, &rule).await;
+        }
+    }
+
     Ok(())
 }

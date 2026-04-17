@@ -22,6 +22,8 @@ pub enum AssetKind {
     Voice,
     /// A video resource.
     Video,
+    /// A code/script file.
+    Code,
     /// Some other type of asset.
     Other,
 }
@@ -37,6 +39,7 @@ impl AssetKind {
             AssetKind::Audio => "audio",
             AssetKind::Voice => "voice",
             AssetKind::Video => "video",
+            AssetKind::Code => "code",
             AssetKind::Other => "other",
         }
     }
@@ -52,6 +55,7 @@ impl AssetKind {
             "audio" => Some(AssetKind::Audio),
             "voice" => Some(AssetKind::Voice),
             "video" => Some(AssetKind::Video),
+            "code" => Some(AssetKind::Code),
             "other" => Some(AssetKind::Other),
             _ => None,
         }
@@ -201,6 +205,7 @@ mod tests {
         assert_eq!(AssetKind::Audio.as_str(), "audio");
         assert_eq!(AssetKind::Voice.as_str(), "voice");
         assert_eq!(AssetKind::Video.as_str(), "video");
+        assert_eq!(AssetKind::Code.as_str(), "code");
         assert_eq!(AssetKind::Other.as_str(), "other");
     }
 
@@ -213,6 +218,7 @@ mod tests {
         assert_eq!(AssetKind::from_str("audio"), Some(AssetKind::Audio));
         assert_eq!(AssetKind::from_str("voice"), Some(AssetKind::Voice));
         assert_eq!(AssetKind::from_str("video"), Some(AssetKind::Video));
+        assert_eq!(AssetKind::from_str("code"), Some(AssetKind::Code));
         assert_eq!(AssetKind::from_str("other"), Some(AssetKind::Other));
         assert_eq!(AssetKind::from_str("unknown"), None);
     }
