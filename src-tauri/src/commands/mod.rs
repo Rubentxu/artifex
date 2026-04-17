@@ -18,6 +18,7 @@ pub mod projects;
 pub mod publish;
 pub mod quick_sprites;
 pub mod remove_background;
+pub mod renderer_3d;
 pub mod slice_sprite_sheet;
 pub mod texture;
 pub mod video_gen;
@@ -43,6 +44,7 @@ pub use projects::{
 pub use publish::{export_project, open_itch_io};
 pub use quick_sprites::generate_quick_sprites;
 pub use remove_background::remove_background;
+pub use renderer_3d::render_3d_to_sprites;
 pub use slice_sprite_sheet::slice_sprite_sheet;
 pub use texture::generate_seamless_texture;
 pub use video_gen::generate_video;

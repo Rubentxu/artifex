@@ -22,7 +22,7 @@ use commands::{
     generate_code, generate_image, generate_material, generate_quick_sprites, generate_seamless_texture, generate_sprite_sheet, generate_tile, generate_video,
     get_animation, get_asset, get_job, get_project, import_asset, inpaint_image, list_animations,
     list_assets, list_code_templates, list_jobs, list_projects, open_itch_io, open_project, outpaint_image,
-    pack_atlas, register_asset, remove_background, rename_project, slice_sprite_sheet, synthesize_speech,
+    pack_atlas, register_asset, remove_background, rename_project, render_3d_to_sprites, slice_sprite_sheet, synthesize_speech,
     update_animation,
 };
 use model_config::{
@@ -37,7 +37,7 @@ use artifex_model_config::credential_store::CredentialStore;
 use artifex_model_config::ModelRouter;
 use repositories::{SqliteAssetRepository, SqliteJobRepository, SqliteProjectRepository};
 use state::AppState;
-use workers::{AnimationExportWorker, AtlasPackWorker, AudioGenWorker, CodeWorker, ImageGenWorker, ImageProcessWorker, MaterialWorker, QuickSpritesWorker, SliceWorker, SpriteWorker, TileWorker, SeamlessTextureWorker, VideoGenWorker, WorkerRunner};
+use workers::{AnimationExportWorker, AtlasPackWorker, AudioGenWorker, CodeWorker, ImageGenWorker, ImageProcessWorker, MaterialWorker, QuickSpritesWorker, Renderer3dWorker, SliceWorker, SpriteWorker, TileWorker, SeamlessTextureWorker, VideoGenWorker, WorkerRunner};
 
 /// Attempts to create a keychain credential store.
 ///
@@ -178,8 +178,9 @@ pub fn run_app() {
                 credential_store.clone(),
                 assets_dir.clone(),
             ));
+            let renderer_3d_worker = Arc::new(Renderer3dWorker::new(assets_dir.clone()));
             let worker_runner = WorkerRunner::with_app_handle(
-                vec![image_worker, image_process_worker, tile_worker, seamless_worker, audio_worker, sprite_worker, slice_worker, code_worker, material_worker, animation_export_worker, atlas_pack_worker, video_worker, quick_sprites_worker],
+                vec![image_worker, image_process_worker, tile_worker, seamless_worker, audio_worker, sprite_worker, slice_worker, code_worker, material_worker, animation_export_worker, atlas_pack_worker, video_worker, quick_sprites_worker, renderer_3d_worker],
                 job_repo.clone(),
                 asset_service.clone(),
                 app.handle().clone(),
@@ -248,6 +249,7 @@ pub fn run_app() {
             generate_seamless_texture,
             generate_sprite_sheet,
             generate_quick_sprites,
+            render_3d_to_sprites,
             generate_video,
             slice_sprite_sheet,
             pack_atlas,

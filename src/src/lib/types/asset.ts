@@ -346,3 +346,23 @@ export interface ExportProjectResponse {
   assetCount: number;
   manifestPath: string;
 }
+
+// 3D Renderer types
+
+export interface CameraAngle {
+  yawDegrees: number;
+  pitchDegrees: number;
+}
+
+export type CameraPreset = 'isometric' | 'topdown' | 'custom';
+
+export interface Render3dRequest {
+  projectId: string;
+  modelFilePath: string;
+  cameraPreset: CameraPreset;
+  customAngles?: CameraAngle[];
+  outputWidth?: number;
+  outputHeight?: number;
+  animationName?: string;
+  animationFps?: number;
+}

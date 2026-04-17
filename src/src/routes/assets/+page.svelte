@@ -20,6 +20,7 @@
   import PackAtlasDialog from '$lib/components/PackAtlasDialog.svelte';
   import SeamlessTextureDialog from '$lib/components/SeamlessTextureDialog.svelte';
   import QuickSpritesDialog from '$lib/components/QuickSpritesDialog.svelte';
+  import Render3dDialog from '$lib/components/Render3dDialog.svelte';
   import JobHistoryPanel from '$lib/components/JobHistoryPanel.svelte';
   import PublishDialog from '$lib/components/PublishDialog.svelte';
   import { open } from '@tauri-apps/plugin-dialog';
@@ -48,6 +49,7 @@
   let showSeamlessTextureDialog = $state(false);
   let showQuickSpritesDialog = $state(false);
   let showPublishDialog = $state(false);
+  let showRender3dDialog = $state(false);
   let selectedAssetIdForAction = $state<string | null>(null);
   let importError = $state<string | null>(null);
   let unlistenJobCompleted: (() => void) | null = null;
@@ -313,6 +315,17 @@
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>
         Quick Sprites
+      </button>
+      <button
+        onclick={() => (showRender3dDialog = true)}
+        class="flex items-center gap-2 px-4 py-2 bg-[var(--color-surface)] hover:bg-[var(--color-surface)]/80 rounded-lg transition-colors font-medium"
+        disabled={!$selectedProject}
+        title={$selectedProject ? '' : 'Select a project first'}
+      >
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 10l-2 1m0 0l-2-1m2 1v2.5M20 7l-2 1m2-1l-2-1m2 1v2.5M14 4l-2-1-2 1M4 7l2-1M4 7l2 1M4 7v2.5M12 21l-2-1m2 1l2-1m-2 1v-2.5M6 18l-2-1v-2.5M18 18l2-1v-2.5" />
+        </svg>
+        3D Render
       </button>
       <button
         onclick={() => (showGenerateCodeDialog = true)}
@@ -712,6 +725,17 @@
     availableAssets={selectableAssets}
     onclose={() => {
       showQuickSpritesDialog = false;
+    }}
+  />
+{/if}
+
+<!-- Render 3D Dialog -->
+{#if showRender3dDialog && $selectedProject}
+  <Render3dDialog
+    open={showRender3dDialog}
+    projectId={$selectedProject.id}
+    onclose={() => {
+      showRender3dDialog = false;
     }}
   />
 {/if}
