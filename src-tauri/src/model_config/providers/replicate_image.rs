@@ -360,6 +360,7 @@ struct ReplicateInput {
 }
 
 #[derive(Debug, Deserialize)]
+#[allow(dead_code)]
 struct ReplicatePredictionResponse {
     id: String,
     status: String,
@@ -369,6 +370,7 @@ struct ReplicatePredictionResponse {
 }
 
 #[derive(Debug, Deserialize)]
+#[allow(dead_code)]
 struct ReplicateUrls {
     poll: String,
     get: String,

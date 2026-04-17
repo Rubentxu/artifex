@@ -151,8 +151,7 @@ impl JobWorker for TileWorker {
 
 /// Calculates a seamlessness score by comparing opposite edges.
 /// Returns a value between 0.0 (not seamless) and 1.0 (perfectly seamless).
-fn calculate_seamlessness(image_data: &[u8], width: u32, height: u32) -> Result<f32, AppError> {
-    use image::{GenericImageView, RgbImage};
+fn calculate_seamlessness(image_data: &[u8], _width: u32, _height: u32) -> Result<f32, AppError> {
 
     // Decode the image to check edges
     let img = image::load_from_memory(image_data)

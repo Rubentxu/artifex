@@ -40,6 +40,7 @@ struct RoutingRuleRow {
 
 /// SQLite row representation of a provider credential reference.
 #[derive(FromRow)]
+#[allow(dead_code)]
 struct ProviderCredentialRow {
     id: String,
     provider_name: String,

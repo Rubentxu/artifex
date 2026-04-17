@@ -192,6 +192,7 @@ struct TogetherMessage {
 }
 
 #[derive(Debug, Deserialize)]
+#[allow(dead_code)]
 struct TogetherChatResponse {
     id: String,
     choices: Vec<TogetherChoice>,
@@ -206,12 +207,14 @@ struct TogetherChoice {
 }
 
 #[derive(Debug, Deserialize)]
+#[allow(dead_code)]
 struct TogetherChoiceMessage {
     role: String,
     content: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
+#[allow(dead_code)]
 struct TogetherUsage {
     #[serde(rename = "prompt_tokens")]
     prompt_tokens: u32,

@@ -345,6 +345,7 @@ struct FalImageSize {
 }
 
 #[derive(Debug, Deserialize)]
+#[allow(dead_code)]
 struct FalQueueResponse {
     #[serde(rename = "requestId")]
     request_id: String,

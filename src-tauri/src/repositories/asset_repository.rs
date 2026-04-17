@@ -9,6 +9,7 @@ use artifex_shared_kernel::{is_unique_violation, ArtifexError, AssetId, ProjectI
 
 /// SQLite row representation of an asset.
 #[derive(FromRow)]
+#[allow(dead_code)]
 struct AssetRow {
     id: String,
     project_id: String,
@@ -187,7 +188,6 @@ fn parse_rfc3339(s: &str) -> Result<Timestamp, ArtifexError> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use artifex_shared_kernel::ProjectId;
 
     #[test]
     fn test_row_to_asset_parses_correctly() {

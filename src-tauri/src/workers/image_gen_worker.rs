@@ -120,7 +120,6 @@ impl JobWorker for ImageGenWorker {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
 
     // Note: Unit tests for ImageGenWorker are limited because the worker
     // requires async dependencies (ModelRouter, CredentialStore).

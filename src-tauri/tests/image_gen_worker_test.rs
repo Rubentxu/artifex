@@ -7,8 +7,8 @@ mod test_helpers;
 
 use std::sync::Arc;
 
-use artifex_job_queue::{Job, JobRepository, JobStatus};
-use artifex_shared_kernel::{JobId, ProjectId};
+use artifex_job_queue::{Job};
+use artifex_shared_kernel::{ProjectId};
 use artifex_model_config::credential_store::InMemoryCredentialStore;
 use artifex_model_config::image_provider::{ImageGenParams, ImageGenResult, ImageProvider};
 use artifex_model_config::provider::{AuthType, ModelCapability, ProviderKind, ProviderMetadata, ProviderError};
@@ -20,7 +20,7 @@ use src_tauri::workers::JobWorker;
 use test_helpers::setup_test_db;
 use artifex_model_config::ModelRouter;
 use artifex_model_config::ModelProfile;
-use uuid::Uuid;
+
 
 /// Mock image provider that tracks call count and can fail on demand.
 struct MockImageProvider {

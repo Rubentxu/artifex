@@ -9,13 +9,14 @@ use artifex_job_queue::Job;
 use artifex_model_config::credential_store::CredentialStore;
 use artifex_model_config::ModelRouter;
 use artifex_shared_kernel::AppError;
-use image::{DynamicImage, GenericImageView, ImageBuffer, Rgb, RgbImage};
+use image::{Rgb, RgbImage};
 use serde::Deserialize;
 
 use super::traits::{JobFuture, JobResult, JobWorker};
 
 /// Payload for background removal jobs.
 #[derive(Debug, Deserialize)]
+#[allow(dead_code)]
 struct RemoveBackgroundPayload {
     source_asset_id: String,
     source_file_path: String,

@@ -2,7 +2,7 @@
 
 use tauri::State;
 
-use crate::dto::{AudioGenParamsDto, GenerateAudioRequest, GenerateTtsRequest, TtsParamsDto};
+use crate::dto::{GenerateAudioRequest, GenerateTtsRequest};
 use crate::state::AppState;
 
 /// Generates audio (SFX or Music) using the configured provider.
