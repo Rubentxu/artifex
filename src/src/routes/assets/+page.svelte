@@ -6,11 +6,12 @@
   import GenerateImageDialog from '$lib/components/GenerateImageDialog.svelte';
   import GenerateAudioDialog from '$lib/components/GenerateAudioDialog.svelte';
   import GenerateTileDialog from '$lib/components/GenerateTileDialog.svelte';
+  import GenerateSpriteSheetDialog from '$lib/components/GenerateSpriteSheetDialog.svelte';
   import RemoveBackgroundDialog from '$lib/components/RemoveBackgroundDialog.svelte';
   import ConvertPixelArtDialog from '$lib/components/ConvertPixelArtDialog.svelte';
   import JobHistoryPanel from '$lib/components/JobHistoryPanel.svelte';
   import { open } from '@tauri-apps/plugin-dialog';
-  import type { AssetKind } from '$lib/types/asset';
+  import type { AssetKind, AssetResponse } from '$lib/types/asset';
 
   interface JobCompletedPayload {
     job_id: string;
@@ -20,6 +21,7 @@
   let showGenerateImageDialog = $state(false);
   let showGenerateAudioDialog = $state(false);
   let showGenerateTileDialog = $state(false);
+  let showGenerateSpriteSheetDialog = $state(false);
   let showRemoveBackgroundDialog = $state(false);
   let showConvertPixelArtDialog = $state(false);
   let selectedAssetIdForAction = $state<string | null>(null);
@@ -27,6 +29,9 @@
   let unlistenJobCompleted: (() => void) | null = null;
 
   const filterKinds: (AssetKind | 'All')[] = ['All', 'Image', 'Sprite', 'Tileset', 'Material', 'Audio', 'Voice', 'Video', 'Other'];
+
+  // Derived list of video assets for sprite sheet generation
+  let videoAssets: AssetResponse[] = $derived($assetStore.assets.filter(a => a.kind === 'Video'));
 
   onMount(async () => {
     if ($selectedProject) {
@@ -106,6 +111,10 @@
     selectedAssetIdForAction = assetId;
     showConvertPixelArtDialog = true;
   }
+
+  function handleGenerateSpriteSheet() {
+    showGenerateSpriteSheetDialog = true;
+  }
 </script>
 
 <div class="h-full flex flex-col overflow-hidden">
@@ -145,6 +154,17 @@
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" />
         </svg>
         Generate Tile
+      </button>
+      <button
+        onclick={handleGenerateSpriteSheet}
+        class="flex items-center gap-2 px-4 py-2 bg-[var(--color-surface)] hover:bg-[var(--color-surface)]/80 rounded-lg transition-colors font-medium"
+        disabled={!$selectedProject || videoAssets.length === 0}
+        title={!$selectedProject ? 'Select a project first' : videoAssets.length === 0 ? 'No video assets available' : ''}
+      >
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        Generate Sprite Sheet
       </button>
       <button
         onclick={handleImport}
@@ -316,6 +336,16 @@
     open={showGenerateTileDialog}
     projectId={$selectedProject.id}
     onclose={() => (showGenerateTileDialog = false)}
+  />
+{/if}
+
+<!-- Generate Sprite Sheet Dialog -->
+{#if showGenerateSpriteSheetDialog && $selectedProject}
+  <GenerateSpriteSheetDialog
+    open={showGenerateSpriteSheetDialog}
+    projectId={$selectedProject.id}
+    videoAssets={videoAssets}
+    onclose={() => (showGenerateSpriteSheetDialog = false)}
   />
 {/if}
 

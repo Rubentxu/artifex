@@ -213,6 +213,61 @@ fn default_seamless() -> bool {
     true
 }
 
+/// Output format for sprite sheet manifests.
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum OutputFormat {
+    Json,
+    Aseprite,
+    Both,
+}
+
+impl Default for OutputFormat {
+    fn default() -> Self {
+        OutputFormat::Both
+    }
+}
+
+/// Request type for generating a sprite sheet from a video asset.
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GenerateSpriteSheetRequest {
+    pub asset_id: String,
+    pub project_id: String,
+    #[serde(default = "default_sprite_fps")]
+    pub fps: u8,
+    #[serde(default = "default_dedup_threshold")]
+    pub dedup_threshold: f32,
+    #[serde(default = "default_atlas_max_size")]
+    pub atlas_max_size: u32,
+    #[serde(default = "default_padding")]
+    pub padding: u8,
+    #[serde(default = "default_animation_name")]
+    pub animation_name: String,
+    #[serde(default)]
+    pub output_format: OutputFormat,
+}
+
+fn default_sprite_fps() -> u8 {
+    10
+}
+
+fn default_dedup_threshold() -> f32 {
+    0.03
+}
+
+fn default_atlas_max_size() -> u32 {
+    4096
+}
+
+fn default_padding() -> u8 {
+    1
+}
+
+fn default_animation_name() -> String {
+    "idle".to_string()
+}
+
 /// Palette mode for pixel art conversion.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "type", content = "colors")]

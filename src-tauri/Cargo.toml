@@ -67,6 +67,15 @@ dashmap = "5"
 # Audio metadata extraction
 symphonia = { version = "0.5", features = ["mp3", "wav", "ogg"] }
 
+# Video frame extraction
+ffmpeg-sidecar = "2"
+
+# Texture atlas packing
+texture_packer = "0.30"
+
+# Ordered maps for Aseprite JSON
+indexmap = { version = "2", features = ["serde"] }
+
 [features]
 default = ["custom-protocol"]
 custom-protocol = ["tauri/custom-protocol"]

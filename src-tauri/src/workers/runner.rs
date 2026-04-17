@@ -259,17 +259,32 @@ impl WorkerRunner {
                         "tts_synthesize" => "voice",
                         "image_generate" | "image_remove_background" | "pixel_art_convert" => "image",
                         "tile_generate" => "tileset",
+                        "sprite_generate" => "sprite",
                         _ => "unknown",
                     };
 
-                    for output_file in &result.output_files {
+                    // For sprite_generate: only register the atlas PNG (first output file)
+                    // Manifest and Aseprite JSON paths are stored in metadata only
+                    let output_files_to_register = if job.job_type == "sprite_generate" {
+                        result.output_files.iter().take(1).collect::<Vec<_>>()
+                    } else {
+                        result.output_files.iter().collect::<Vec<_>>()
+                    };
+
+                    for output_file in output_files_to_register {
                         let project_id = job.project_id.into_uuid().to_string();
                         let asset_name = output_file
                             .file_name()
                             .map(|n| n.to_string_lossy().to_string())
                             .unwrap_or_else(|| format!("generated_{}.bin", asset_kind));
 
-                        let metadata = Some(result.metadata.clone());
+                        // For sprite_generate: include manifest/aseprite paths in metadata
+                        // For other job types: use standard metadata
+                        let metadata = if job.job_type == "sprite_generate" {
+                            Some(result.metadata.clone())
+                        } else {
+                            Some(result.metadata.clone())
+                        };
                         let file_path = output_file.to_string_lossy().to_string();
 
                         let asset_service_clone = asset_service.clone();

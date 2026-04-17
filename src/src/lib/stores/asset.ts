@@ -1,5 +1,5 @@
 import { writable, derived } from 'svelte/store';
-import type { AssetResponse, AssetKind, GenerateImageRequest, GenerateAudioRequest, GenerateTtsRequest, RemoveBackgroundRequest, ConvertPixelArtRequest, GenerateTileRequest } from '$lib/types/asset';
+import type { AssetResponse, AssetKind, GenerateImageRequest, GenerateAudioRequest, GenerateTtsRequest, RemoveBackgroundRequest, ConvertPixelArtRequest, GenerateTileRequest, GenerateSpriteSheetRequest } from '$lib/types/asset';
 import * as assetApi from '$lib/api/assets';
 
 interface AssetState {
@@ -82,6 +82,11 @@ function createAssetStore() {
 
     async generateTile(request: GenerateTileRequest) {
       const jobId = await assetApi.generateTile(request);
+      return jobId;
+    },
+
+    async generateSpriteSheet(request: GenerateSpriteSheetRequest) {
+      const jobId = await assetApi.generateSpriteSheet(request);
       return jobId;
     },
   };

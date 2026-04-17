@@ -98,3 +98,16 @@ export interface GenerateTileRequest {
   biome?: string;
   seamless?: boolean;
 }
+
+export type OutputFormat = 'Json' | 'Aseprite' | 'Both';
+
+export interface GenerateSpriteSheetRequest {
+  asset_id: string;
+  project_id: string;
+  fps?: number;
+  dedup_threshold?: number;
+  atlas_max_size?: number;
+  padding?: number;
+  animation_name?: string;
+  output_format?: OutputFormat;
+}
