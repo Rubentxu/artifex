@@ -276,3 +276,21 @@ export interface AtlasManifest {
   atlas_height: number;
   regions: AtlasRegion[];
 }
+
+// Seamless Texture Generation types
+
+export type SeamlessMode = 'FromPrompt' | 'FromAsset';
+
+export interface SeamlessTextureRequest {
+  project_id: string;
+  mode: SeamlessMode;
+  prompt?: string;
+  negative_prompt?: string;
+  width?: number;
+  height?: number;
+  asset_id?: string;
+  secondary_asset_id?: string;
+  seam_threshold?: number;
+  padding_pixels?: number;
+  blend_fraction?: number;
+}

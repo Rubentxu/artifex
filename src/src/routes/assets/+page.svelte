@@ -17,6 +17,7 @@
   import AnimationEditor from '$lib/components/AnimationEditor.svelte';
   import CreateAnimationDialog from '$lib/components/CreateAnimationDialog.svelte';
   import PackAtlasDialog from '$lib/components/PackAtlasDialog.svelte';
+  import SeamlessTextureDialog from '$lib/components/SeamlessTextureDialog.svelte';
   import JobHistoryPanel from '$lib/components/JobHistoryPanel.svelte';
   import { open } from '@tauri-apps/plugin-dialog';
   import { convertFileSrc } from '@tauri-apps/api/core';
@@ -40,6 +41,7 @@
   let showGenerateMaterialDialog = $state(false);
   let showCreateAnimationDialog = $state(false);
   let showPackAtlasDialog = $state(false);
+  let showSeamlessTextureDialog = $state(false);
   let selectedAssetIdForAction = $state<string | null>(null);
   let importError = $state<string | null>(null);
   let unlistenJobCompleted: (() => void) | null = null;
@@ -64,6 +66,9 @@
 
   // Derived list of packable assets (Image/Sprite/Tileset) for atlas packing
   let packableAssets: AssetResponse[] = $derived($assetStore.assets.filter(a => a.kind === 'Image' || a.kind === 'Sprite' || a.kind === 'Tileset'));
+
+  // Derived list of selectable assets (Image/Sprite/Tileset/Material) for seamless texture
+  let selectableAssets: AssetResponse[] = $derived($assetStore.assets.filter(a => a.kind === 'Image' || a.kind === 'Sprite' || a.kind === 'Tileset' || a.kind === 'Material'));
 
   // Get image URL for selected asset
   let selectedImageUrl = $derived(selectedImageAsset?.file_path ? convertFileSrc(selectedImageAsset.file_path) : '');
@@ -172,6 +177,11 @@
 
   function handlePackAtlas() {
     showPackAtlasDialog = true;
+  }
+
+  function handleSeamlessTexture(assetId: string) {
+    selectedAssetIdForAction = assetId;
+    showSeamlessTextureDialog = true;
   }
 </script>
 
@@ -352,6 +362,15 @@
               Generate Material
             </button>
           {/if}
+          <button
+            onclick={() => handleSeamlessTexture($assetStore.selectedId!)}
+            class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--color-surface)] hover:bg-[var(--color-surface)]/80 transition-colors text-sm font-medium"
+          >
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" />
+            </svg>
+            Seamless Texture
+          </button>
         </div>
       </div>
     {/if}
@@ -598,6 +617,19 @@
     availableAssets={packableAssets}
     onclose={() => {
       showPackAtlasDialog = false;
+    }}
+  />
+{/if}
+
+<!-- Seamless Texture Dialog -->
+{#if showSeamlessTextureDialog && $selectedProject && selectedAssetIdForAction}
+  <SeamlessTextureDialog
+    open={showSeamlessTextureDialog}
+    projectId={$selectedProject.id}
+    availableAssets={selectableAssets}
+    onclose={() => {
+      showSeamlessTextureDialog = false;
+      selectedAssetIdForAction = null;
     }}
   />
 {/if}

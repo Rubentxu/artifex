@@ -659,6 +659,56 @@ pub struct AtlasManifest {
     pub regions: Vec<AtlasRegion>,
 }
 
+// =============================================================================
+// Seamless Texture Generation DTOs
+// =============================================================================
+
+/// Generation mode for seamless texture.
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum SeamlessMode {
+    /// Generate from prompt, then apply mirror-padding.
+    FromPrompt,
+    /// Process existing asset with mirror-padding.
+    FromAsset,
+}
+
+/// Request type for seamless texture generation.
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SeamlessTextureRequest {
+    pub project_id: String,
+    /// Generation mode.
+    pub mode: SeamlessMode,
+    /// Prompt for generation (required for FromPrompt mode).
+    #[serde(default)]
+    pub prompt: Option<String>,
+    /// Optional negative prompt.
+    #[serde(default)]
+    pub negative_prompt: Option<String>,
+    /// Image width (for FromPrompt mode). Default 512.
+    #[serde(default)]
+    pub width: Option<u32>,
+    /// Image height (for FromPrompt mode). Default 512.
+    #[serde(default)]
+    pub height: Option<u32>,
+    /// Source asset ID (required for FromAsset mode).
+    #[serde(default)]
+    pub asset_id: Option<String>,
+    /// Secondary asset ID for blending (optional).
+    #[serde(default)]
+    pub secondary_asset_id: Option<String>,
+    /// Seam threshold (0.0-1.0). Default 0.05.
+    #[serde(default)]
+    pub seam_threshold: Option<f32>,
+    /// Padding pixels for mirror-padding. Default 16.
+    #[serde(default)]
+    pub padding_pixels: Option<u32>,
+    /// Blend fraction for overlap zones (0.0-1.0). Default 0.5.
+    #[serde(default)]
+    pub blend_fraction: Option<f32>,
+}
+
 /// Operation payload for atlas pack worker.
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]

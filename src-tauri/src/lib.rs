@@ -19,7 +19,7 @@ use application::{AssetApplicationService, JobApplicationService, ProjectApplica
 use commands::{
     archive_project, cancel_job, convert_pixel_art, create_animation, create_job, create_project,
     delete_animation, delete_asset, delete_project, export_animation, generate_audio,
-    generate_code, generate_image, generate_material, generate_sprite_sheet, generate_tile,
+    generate_code, generate_image, generate_material, generate_seamless_texture, generate_sprite_sheet, generate_tile,
     get_animation, get_asset, get_job, get_project, import_asset, inpaint_image, list_animations,
     list_assets, list_code_templates, list_jobs, list_projects, open_project, outpaint_image,
     pack_atlas, register_asset, remove_background, rename_project, slice_sprite_sheet, synthesize_speech,
@@ -37,7 +37,7 @@ use artifex_model_config::credential_store::CredentialStore;
 use artifex_model_config::ModelRouter;
 use repositories::{SqliteAssetRepository, SqliteJobRepository, SqliteProjectRepository};
 use state::AppState;
-use workers::{AnimationExportWorker, AtlasPackWorker, AudioGenWorker, CodeWorker, ImageGenWorker, ImageProcessWorker, MaterialWorker, SliceWorker, SpriteWorker, TileWorker, WorkerRunner};
+use workers::{AnimationExportWorker, AtlasPackWorker, AudioGenWorker, CodeWorker, ImageGenWorker, ImageProcessWorker, MaterialWorker, SliceWorker, SpriteWorker, TileWorker, SeamlessTextureWorker, WorkerRunner};
 
 /// Attempts to create a keychain credential store.
 ///
@@ -144,6 +144,11 @@ pub fn run_app() {
                 credential_store.clone(),
                 assets_dir.clone(),
             ));
+            let seamless_worker = Arc::new(SeamlessTextureWorker::new(
+                model_router.clone(),
+                credential_store.clone(),
+                assets_dir.clone(),
+            ));
             let audio_worker = Arc::new(AudioGenWorker::new(
                 model_router.clone(),
                 credential_store.clone(),
@@ -164,7 +169,7 @@ pub fn run_app() {
             let animation_export_worker = Arc::new(AnimationExportWorker::new(assets_dir.clone()));
             let atlas_pack_worker = Arc::new(AtlasPackWorker::new(assets_dir.clone()));
             let worker_runner = WorkerRunner::with_app_handle(
-                vec![image_worker, image_process_worker, tile_worker, audio_worker, sprite_worker, slice_worker, code_worker, material_worker, animation_export_worker, atlas_pack_worker],
+                vec![image_worker, image_process_worker, tile_worker, seamless_worker, audio_worker, sprite_worker, slice_worker, code_worker, material_worker, animation_export_worker, atlas_pack_worker],
                 job_repo.clone(),
                 asset_service.clone(),
                 app.handle().clone(),
@@ -230,6 +235,7 @@ pub fn run_app() {
             outpaint_image,
             convert_pixel_art,
             generate_tile,
+            generate_seamless_texture,
             generate_sprite_sheet,
             slice_sprite_sheet,
             pack_atlas,

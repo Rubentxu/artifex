@@ -14,6 +14,7 @@ pub mod slice_worker;
 pub mod tile_worker;
 pub mod audio_gen_worker;
 pub mod animation_export_worker;
+pub mod seamless_texture_worker;
 pub mod runner;
 
 pub use traits::{JobFuture, JobResult, JobWorker};
@@ -28,4 +29,5 @@ pub use slice_worker::SliceWorker;
 pub use tile_worker::TileWorker;
 pub use audio_gen_worker::AudioGenWorker;
 pub use animation_export_worker::AnimationExportWorker;
+pub use seamless_texture_worker::SeamlessTextureWorker;
 pub use runner::WorkerRunner;
