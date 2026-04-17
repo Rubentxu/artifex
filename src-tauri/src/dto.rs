@@ -470,19 +470,14 @@ fn default_inpaint_steps() -> u32 {
 }
 
 /// Direction for outpainting.
-#[derive(Debug, Clone, Copy, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Default, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum OutpaintDirection {
-    Left,
+    #[default]
     Right,
+    Left,
     Top,
     Bottom,
-}
-
-impl Default for OutpaintDirection {
-    fn default() -> Self {
-        OutpaintDirection::Right
-    }
 }
 
 /// Request type for outpainting an image.
@@ -517,6 +512,18 @@ pub struct OutpaintRequest {
 
 fn default_outpaint_extension() -> u32 {
     256
+}
+
+/// Request type for generating PBR materials from an image.
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GenerateMaterialRequest {
+    pub project_id: String,
+    pub asset_id: String,
+    #[serde(default)]
+    pub provider_id: Option<String>,
+    #[serde(default)]
+    pub model_id: Option<String>,
 }
 
 #[cfg(test)]

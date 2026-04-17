@@ -188,3 +188,12 @@ export interface OutpaintRequest {
   steps?: number;
   provider_mode?: string;
 }
+
+export type MapKind = 'basecolor' | 'normal' | 'roughness' | 'metalness' | 'height';
+
+export interface GenerateMaterialRequest {
+  project_id: string;
+  asset_id: string;
+  provider_id?: string;
+  model_id?: string;
+}

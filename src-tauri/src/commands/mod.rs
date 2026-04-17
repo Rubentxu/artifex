@@ -4,6 +4,7 @@ pub mod assets;
 pub mod audio_gen;
 pub mod code_gen;
 pub mod convert_pixel_art;
+pub mod generate_material;
 pub mod generate_sprite_sheet;
 pub mod generate_tile;
 pub mod image_gen;
@@ -19,6 +20,7 @@ pub use assets::{delete_asset, get_asset, import_asset, list_assets, register_as
 pub use audio_gen::{generate_audio, synthesize_speech};
 pub use code_gen::generate_code;
 pub use convert_pixel_art::convert_pixel_art;
+pub use generate_material::generate_material;
 pub use generate_sprite_sheet::generate_sprite_sheet;
 pub use generate_tile::generate_tile;
 pub use image_gen::generate_image;

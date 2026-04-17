@@ -882,6 +882,16 @@ pub async fn seed_defaults(pool: &SqlitePool) -> Result<(), ArtifexError> {
         let _ = create_rule(pool, &rule).await;
     }
 
+    // Seed material generation routing rule using the same PATINA material profile
+    let materialgen_rule = RoutingRule::new(
+        "materialgen.from_image".to_string(),
+        *tilegen_profile_ids
+            .get("Tile Material (Fal)")
+            .expect("profile exists"),
+        vec![],
+    );
+    let _ = create_rule(pool, &materialgen_rule).await;
+
     // Seed code generation routing rules using the existing TextComplete profile
     let all_profiles = list_profiles(pool).await?;
     if let Some(text_profile) = all_profiles.iter().find(|p| {

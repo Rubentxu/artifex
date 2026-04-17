@@ -13,6 +13,7 @@
   import GenerateCodeDialog from '$lib/components/GenerateCodeDialog.svelte';
   import InpaintDialog from '$lib/components/InpaintDialog.svelte';
   import OutpaintDialog from '$lib/components/OutpaintDialog.svelte';
+  import GenerateMaterialDialog from '$lib/components/GenerateMaterialDialog.svelte';
   import JobHistoryPanel from '$lib/components/JobHistoryPanel.svelte';
   import { open } from '@tauri-apps/plugin-dialog';
   import { convertFileSrc } from '@tauri-apps/api/core';
@@ -33,6 +34,7 @@
   let showGenerateCodeDialog = $state(false);
   let showInpaintDialog = $state(false);
   let showOutpaintDialog = $state(false);
+  let showGenerateMaterialDialog = $state(false);
   let selectedAssetIdForAction = $state<string | null>(null);
   let importError = $state<string | null>(null);
   let unlistenJobCompleted: (() => void) | null = null;
@@ -148,6 +150,11 @@
   function handleOutpaint(assetId: string) {
     selectedAssetIdForAction = assetId;
     showOutpaintDialog = true;
+  }
+
+  function handleGenerateMaterial(assetId: string) {
+    selectedAssetIdForAction = assetId;
+    showGenerateMaterialDialog = true;
   }
 </script>
 
@@ -295,6 +302,17 @@
             </svg>
             Outpaint
           </button>
+          {#if selectedAssetData?.kind === 'Image'}
+            <button
+              onclick={() => handleGenerateMaterial($assetStore.selectedId!)}
+              class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--color-surface)] hover:bg-[var(--color-surface)]/80 transition-colors text-sm font-medium"
+            >
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" />
+              </svg>
+              Generate Material
+            </button>
+          {/if}
         </div>
       </div>
     {/if}
@@ -495,6 +513,19 @@
     imageHeight={selectedImageAsset.height ?? 512}
     onclose={() => {
       showOutpaintDialog = false;
+      selectedAssetIdForAction = null;
+    }}
+  />
+{/if}
+
+<!-- Generate Material Dialog -->
+{#if showGenerateMaterialDialog && $selectedProject && selectedAssetIdForAction}
+  <GenerateMaterialDialog
+    open={showGenerateMaterialDialog}
+    projectId={$selectedProject.id}
+    assetId={selectedAssetIdForAction}
+    onclose={() => {
+      showGenerateMaterialDialog = false;
       selectedAssetIdForAction = null;
     }}
   />

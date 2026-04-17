@@ -260,6 +260,7 @@ impl WorkerRunner {
                         "image_generate" | "image_remove_background" | "pixel_art_convert" | "image_inpaint" | "image_outpaint" | "sprite_slice" => "image",
                         "tile_generate" => "tileset",
                         "sprite_generate" => "sprite",
+                        "material_generate" => "material",
                         "code_generate" => "code",
                         _ => "unknown",
                     };

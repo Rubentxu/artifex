@@ -7,7 +7,7 @@ use reqwest::Client;
 use serde::{Deserialize, Serialize};
 
 use artifex_model_config::{
-    image_provider::{ImageEditParams, ImageGenParams, ImageGenResult, ImageProvider},
+    image_provider::{ImageEditParams, ImageGenParams, ImageGenResult, ImageProvider, MapKind, MaterialGenParams, MaterialResult},
     provider::{AuthType, ModelCapability, ProviderError, ProviderKind, ProviderMetadata},
 };
 
@@ -307,6 +307,99 @@ impl ImageProvider for FalImageProvider {
         // Get image dimensions from the result
         // We don't know the exact dimensions without decoding, so use 0 as placeholder
         Ok(ImageGenResult::new(result_data, 0, 0, "png"))
+    }
+
+    async fn generate_material(
+        &self,
+        image_data: &[u8],
+        params: &MaterialGenParams,
+        api_key: &str,
+    ) -> Result<MaterialResult, ProviderError> {
+        use base64::Engine;
+        use std::collections::HashMap;
+
+        // Fal PATINA material endpoint
+        let model_id = "fal-ai/patina/material";
+
+        // Encode image to base64
+        let image_b64 = base64::engine::general_purpose::STANDARD.encode(image_data);
+
+        // Build request body
+        let mut request_body = serde_json::json!({
+            "model": model_id,
+            "input": {
+                "image_url": format!("data:image/png;base64,{}", image_b64)
+            }
+        });
+
+        // Add resolution if provided
+        if let Some(resolution) = params.resolution {
+            // PATINA expects resolution as width/height
+            request_body["input"]["resolution"] = serde_json::json!(resolution);
+        }
+
+        // Submit to queue
+        let response = self
+            .http_client
+            .post(format!("https://queue.fal.run/{}", model_id))
+            .header("Authorization", format!("Key {}", api_key))
+            .header("Content-Type", "application/json")
+            .json(&request_body)
+            .send()
+            .await
+            .map_err(|e| ProviderError::NetworkError(e.to_string()))?;
+
+        if !response.status().is_success() {
+            return Err(map_fal_error(response.status().as_u16(), response.text().await.unwrap_or_default()).await);
+        }
+
+        let queue_response: FalQueueResponse = response
+            .json()
+            .await
+            .map_err(|e| ProviderError::ProviderSpecific("fal".to_string(), e.to_string()))?;
+
+        // Poll for completion
+        let final_result = self.poll_result(&queue_response.request_id, api_key).await?;
+
+        // Fal PATINA returns multiple images, one per map type
+        // The images array contains [basecolor, normal, roughness, metalness, height] in order
+        let mut maps = HashMap::new();
+        let map_kinds = [
+            MapKind::Basecolor,
+            MapKind::Normal,
+            MapKind::Roughness,
+            MapKind::Metalness,
+            MapKind::Height,
+        ];
+
+        for (i, img) in final_result.images.iter().enumerate() {
+            if i < map_kinds.len() {
+                // Download the image
+                let image_response = self
+                    .http_client
+                    .get(&img.url)
+                    .send()
+                    .await
+                    .map_err(|e| ProviderError::NetworkError(e.to_string()))?;
+
+                let image_bytes = image_response
+                    .bytes()
+                    .await
+                    .map_err(|e| ProviderError::NetworkError(e.to_string()))?
+                    .to_vec();
+
+                maps.insert(map_kinds[i], image_bytes);
+            }
+        }
+
+        if maps.is_empty() {
+            return Err(ProviderError::ProviderSpecific(
+                "fal".to_string(),
+                "No material maps returned from PATINA".to_string(),
+            ));
+        }
+
+        Ok(MaterialResult::new(maps))
     }
 
     fn metadata(&self) -> &ProviderMetadata {

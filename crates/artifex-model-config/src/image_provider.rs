@@ -1,8 +1,79 @@
 //! Image generation provider trait and types.
 
+use std::collections::HashMap;
+
 use serde::{Deserialize, Serialize};
 
 use super::provider::{ProviderError, ProviderMetadata};
+
+/// PBR material map types.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum MapKind {
+    Basecolor,
+    Normal,
+    Roughness,
+    Metalness,
+    Height,
+}
+
+impl MapKind {
+    /// Returns the map kind as a lowercase string.
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            MapKind::Basecolor => "basecolor",
+            MapKind::Normal => "normal",
+            MapKind::Roughness => "roughness",
+            MapKind::Metalness => "metalness",
+            MapKind::Height => "height",
+        }
+    }
+
+    /// Parses a string to MapKind.
+    #[allow(clippy::should_implement_trait)]
+    pub fn from_str(s: &str) -> Option<Self> {
+        match s {
+            "basecolor" => Some(MapKind::Basecolor),
+            "normal" => Some(MapKind::Normal),
+            "roughness" => Some(MapKind::Roughness),
+            "metalness" => Some(MapKind::Metalness),
+            "height" => Some(MapKind::Height),
+            _ => None,
+        }
+    }
+}
+
+/// Result of PBR material generation.
+#[derive(Debug, Clone)]
+pub struct MaterialResult {
+    /// Map from MapKind to raw image bytes (PNG format).
+    pub maps: HashMap<MapKind, Vec<u8>>,
+}
+
+impl MaterialResult {
+    /// Creates a new MaterialResult with the given maps.
+    pub fn new(maps: HashMap<MapKind, Vec<u8>>) -> Self {
+        Self { maps }
+    }
+
+    /// Returns true if at least one map is present.
+    pub fn is_valid(&self) -> bool {
+        !self.maps.is_empty()
+    }
+
+    /// Gets a map by kind, returning None if not present.
+    pub fn get(&self, kind: MapKind) -> Option<&Vec<u8>> {
+        self.maps.get(&kind)
+    }
+}
+
+/// Parameters for material generation.
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct MaterialGenParams {
+    /// Optional output resolution (width/height). Provider may override.
+    #[serde(default)]
+    pub resolution: Option<u32>,
+}
 
 /// Parameters for image editing (inpainting/outpainting).
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -243,6 +314,28 @@ pub trait ImageProvider: Send + Sync {
         ))
     }
 
+    /// Generates PBR material maps from a source image.
+    ///
+    /// # Arguments
+    /// * `image_data` - Source image bytes (PNG, JPEG, etc.)
+    /// * `params` - Generation parameters
+    /// * `api_key` - API key for authentication
+    ///
+    /// # Errors
+    /// Returns an error if material generation fails or is not supported.
+    async fn generate_material(
+        &self,
+        image_data: &[u8],
+        params: &MaterialGenParams,
+        api_key: &str,
+    ) -> Result<MaterialResult, ProviderError> {
+        let _ = (image_data, params, api_key);
+        Err(ProviderError::ProviderSpecific(
+            self.metadata().id.clone(),
+            "material generation is not supported by this provider".to_string(),
+        ))
+    }
+
     /// Returns the provider metadata.
     fn metadata(&self) -> &ProviderMetadata;
 }
@@ -435,5 +528,62 @@ mod tests {
         assert_eq!(params.num_inference_steps, 30);
         assert!(params.seed.is_none());
         assert!(params.model_id.is_none());
+    }
+
+    // === MapKind tests ===
+
+    #[test]
+    fn test_map_kind_as_str() {
+        assert_eq!(MapKind::Basecolor.as_str(), "basecolor");
+        assert_eq!(MapKind::Normal.as_str(), "normal");
+        assert_eq!(MapKind::Roughness.as_str(), "roughness");
+        assert_eq!(MapKind::Metalness.as_str(), "metalness");
+        assert_eq!(MapKind::Height.as_str(), "height");
+    }
+
+    #[test]
+    fn test_map_kind_from_str() {
+        assert_eq!(MapKind::from_str("basecolor"), Some(MapKind::Basecolor));
+        assert_eq!(MapKind::from_str("normal"), Some(MapKind::Normal));
+        assert_eq!(MapKind::from_str("roughness"), Some(MapKind::Roughness));
+        assert_eq!(MapKind::from_str("metalness"), Some(MapKind::Metalness));
+        assert_eq!(MapKind::from_str("height"), Some(MapKind::Height));
+        assert_eq!(MapKind::from_str("unknown"), None);
+    }
+
+    // === MaterialResult tests ===
+
+    #[test]
+    fn test_material_result_new() {
+        let mut maps = HashMap::new();
+        maps.insert(MapKind::Basecolor, vec![1, 2, 3]);
+        maps.insert(MapKind::Normal, vec![4, 5, 6]);
+
+        let result = MaterialResult::new(maps);
+        assert!(result.is_valid());
+        assert_eq!(result.get(MapKind::Basecolor), Some(&vec![1, 2, 3]));
+        assert_eq!(result.get(MapKind::Normal), Some(&vec![4, 5, 6]));
+        assert!(result.get(MapKind::Roughness).is_none());
+    }
+
+    #[test]
+    fn test_material_result_empty_is_invalid() {
+        let maps = HashMap::new();
+        let result = MaterialResult::new(maps);
+        assert!(!result.is_valid());
+    }
+
+    #[test]
+    fn test_material_gen_params_default() {
+        let params = MaterialGenParams::default();
+        assert!(params.resolution.is_none());
+    }
+
+    #[test]
+    fn test_material_gen_params_with_resolution() {
+        let params = MaterialGenParams {
+            resolution: Some(1024),
+        };
+        assert_eq!(params.resolution, Some(1024));
     }
 }
