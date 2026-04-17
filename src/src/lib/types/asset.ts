@@ -331,3 +331,18 @@ export interface QuickSpritesRequest {
   image_gen_params?: ImageGenParams;
   options?: QuickSpritesOptions;
 }
+
+// Publishing / Export types
+
+export interface ExportProjectRequest {
+  projectId: string;
+  includeHtmlGallery?: boolean;
+  outputPath?: string;
+}
+
+export interface ExportProjectResponse {
+  outputPath: string;
+  fileSizeBytes: number;
+  assetCount: number;
+  manifestPath: string;
+}

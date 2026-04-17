@@ -73,6 +73,9 @@ ffmpeg-sidecar = "2"
 # Texture atlas packing
 texture_packer = "0.30"
 
+# ZIP archive creation for publishing
+zip = "2"
+
 # Ordered maps for Aseprite JSON
 indexmap = { version = "2", features = ["serde"] }
 

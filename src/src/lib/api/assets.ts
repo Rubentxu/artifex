@@ -1,6 +1,6 @@
 import type { StorageBackend } from './storage-backend';
 import { TauriBackend } from './tauri-backend';
-import type { AssetResponse, ImportAssetRequest, GenerateImageRequest, GenerateAudioRequest, GenerateTtsRequest, RemoveBackgroundRequest, ConvertPixelArtRequest, GenerateTileRequest, GenerateSpriteSheetRequest, SliceSpriteSheetRequest, GenerateCodeRequest, InpaintRequest, OutpaintRequest, GenerateMaterialRequest, AnimationResponse, CreateAnimationRequest, UpdateAnimationRequest, ExportAnimationRequest, PackAtlasRequest, SeamlessTextureRequest, GenerateVideoRequest, QuickSpritesRequest } from '$lib/types/asset';
+import type { AssetResponse, ImportAssetRequest, GenerateImageRequest, GenerateAudioRequest, GenerateTtsRequest, RemoveBackgroundRequest, ConvertPixelArtRequest, GenerateTileRequest, GenerateSpriteSheetRequest, SliceSpriteSheetRequest, GenerateCodeRequest, InpaintRequest, OutpaintRequest, GenerateMaterialRequest, AnimationResponse, CreateAnimationRequest, UpdateAnimationRequest, ExportAnimationRequest, PackAtlasRequest, SeamlessTextureRequest, GenerateVideoRequest, QuickSpritesRequest, ExportProjectRequest, ExportProjectResponse } from '$lib/types/asset';
 
 let backend: StorageBackend;
 export function setBackend(b: StorageBackend): void {
@@ -139,4 +139,12 @@ export async function generateVideo(request: GenerateVideoRequest): Promise<stri
 export async function generateQuickSprites(request: QuickSpritesRequest): Promise<string> {
   // Returns job_id
   return getBackend().invoke<string>('generate_quick_sprites', { request });
+}
+
+export async function exportProject(request: ExportProjectRequest): Promise<ExportProjectResponse> {
+  return getBackend().invoke<ExportProjectResponse>('export_project', { request });
+}
+
+export async function openItchIo(): Promise<void> {
+  return getBackend().invoke<void>('open_itch_io');
 }

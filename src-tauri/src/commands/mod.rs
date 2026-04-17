@@ -15,6 +15,7 @@ pub mod jobs;
 pub mod list_code_templates;
 pub mod outpaint_image;
 pub mod projects;
+pub mod publish;
 pub mod quick_sprites;
 pub mod remove_background;
 pub mod slice_sprite_sheet;
@@ -39,6 +40,7 @@ pub use projects::{
     archive_project, create_project, delete_project, get_project, list_projects, open_project,
     rename_project,
 };
+pub use publish::{export_project, open_itch_io};
 pub use quick_sprites::generate_quick_sprites;
 pub use remove_background::remove_background;
 pub use slice_sprite_sheet::slice_sprite_sheet;

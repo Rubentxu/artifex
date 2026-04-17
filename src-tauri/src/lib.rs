@@ -18,10 +18,10 @@ use tauri::Manager;
 use application::{AssetApplicationService, JobApplicationService, ProjectApplicationService};
 use commands::{
     archive_project, cancel_job, convert_pixel_art, create_animation, create_job, create_project,
-    delete_animation, delete_asset, delete_project, export_animation, generate_audio,
+    delete_animation, delete_asset, delete_project, export_animation, export_project, generate_audio,
     generate_code, generate_image, generate_material, generate_quick_sprites, generate_seamless_texture, generate_sprite_sheet, generate_tile, generate_video,
     get_animation, get_asset, get_job, get_project, import_asset, inpaint_image, list_animations,
-    list_assets, list_code_templates, list_jobs, list_projects, open_project, outpaint_image,
+    list_assets, list_code_templates, list_jobs, list_projects, open_itch_io, open_project, outpaint_image,
     pack_atlas, register_asset, remove_background, rename_project, slice_sprite_sheet, synthesize_speech,
     update_animation,
 };
@@ -254,6 +254,9 @@ pub fn run_app() {
             generate_code,
             generate_material,
             list_code_templates,
+            // Publishing commands
+            export_project,
+            open_itch_io,
             // Model config commands
             list_providers,
             get_provider,

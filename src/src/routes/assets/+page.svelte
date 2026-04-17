@@ -21,6 +21,7 @@
   import SeamlessTextureDialog from '$lib/components/SeamlessTextureDialog.svelte';
   import QuickSpritesDialog from '$lib/components/QuickSpritesDialog.svelte';
   import JobHistoryPanel from '$lib/components/JobHistoryPanel.svelte';
+  import PublishDialog from '$lib/components/PublishDialog.svelte';
   import { open } from '@tauri-apps/plugin-dialog';
   import { convertFileSrc } from '@tauri-apps/api/core';
   import type { AssetKind, AssetResponse } from '$lib/types/asset';
@@ -46,6 +47,7 @@
   let showPackAtlasDialog = $state(false);
   let showSeamlessTextureDialog = $state(false);
   let showQuickSpritesDialog = $state(false);
+  let showPublishDialog = $state(false);
   let selectedAssetIdForAction = $state<string | null>(null);
   let importError = $state<string | null>(null);
   let unlistenJobCompleted: (() => void) | null = null;
@@ -191,6 +193,10 @@
   function handleQuickSprites() {
     showQuickSpritesDialog = true;
   }
+
+  function handlePublish() {
+    showPublishDialog = true;
+  }
 </script>
 
 <div class="h-full flex flex-col overflow-hidden">
@@ -318,6 +324,17 @@
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
         </svg>
         Generate Code
+      </button>
+      <button
+        onclick={handlePublish}
+        class="flex items-center gap-2 px-4 py-2 bg-[var(--color-accent)] hover:bg-[var(--color-accent)]/80 rounded-lg transition-colors font-medium"
+        disabled={!$selectedProject || $assetStore.assets.length === 0}
+        title={!$selectedProject ? 'Select a project first' : $assetStore.assets.length === 0 ? 'No assets to export' : ''}
+      >
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+        </svg>
+        Publish
       </button>
       <button
         onclick={handleImport}
@@ -695,6 +712,18 @@
     availableAssets={selectableAssets}
     onclose={() => {
       showQuickSpritesDialog = false;
+    }}
+  />
+{/if}
+
+<!-- Publish Dialog -->
+{#if showPublishDialog && $selectedProject}
+  <PublishDialog
+    open={showPublishDialog}
+    projectId={$selectedProject.id}
+    projectName={$selectedProject.name}
+    onclose={() => {
+      showPublishDialog = false;
     }}
   />
 {/if}
