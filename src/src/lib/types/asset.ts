@@ -238,3 +238,41 @@ export interface ExportAnimationRequest {
   project_id: string;
   format?: 'spritesheet_json';
 }
+
+// Atlas packing types
+
+export type AtlasSortMode = 'Area' | 'MaxSide' | 'Width' | 'Height' | 'None';
+
+export interface PackAtlasOptions {
+  max_size: 512 | 1024 | 2048 | 4096;
+  padding: number;       // 0-16
+  allow_rotation: boolean;
+  sort_mode: AtlasSortMode;
+}
+
+export interface PackAtlasRequest {
+  project_id: string;
+  atlas_name: string;
+  source_asset_ids: string[];
+  options: PackAtlasOptions;
+}
+
+export interface AtlasRegion {
+  asset_id: string;
+  name: string;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  source_width: number;
+  source_height: number;
+  rotated: boolean;
+}
+
+export interface AtlasManifest {
+  version: number;
+  atlas_name: string;
+  atlas_width: number;
+  atlas_height: number;
+  regions: AtlasRegion[];
+}

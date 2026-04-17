@@ -577,6 +577,107 @@ fn default_export_format() -> ExportAnimationFormat {
     ExportAnimationFormat::SpritesheetJson
 }
 
+/// Sort mode for texture atlas packing.
+#[derive(Debug, Clone, Copy, PartialEq, Default, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum AtlasSortMode {
+    Area,
+    MaxSide,
+    Width,
+    Height,
+    #[default]
+    None,
+}
+
+/// Options for packing a texture atlas.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PackAtlasOptions {
+    #[serde(default = "default_pack_atlas_max_size")]
+    pub max_size: u32,
+    #[serde(default = "default_pack_atlas_padding")]
+    pub padding: u8,
+    #[serde(default)]
+    pub allow_rotation: bool,
+    #[serde(default)]
+    pub sort_mode: AtlasSortMode,
+}
+
+fn default_pack_atlas_max_size() -> u32 {
+    2048
+}
+
+fn default_pack_atlas_padding() -> u8 {
+    1
+}
+
+impl Default for PackAtlasOptions {
+    fn default() -> Self {
+        Self {
+            max_size: default_pack_atlas_max_size(),
+            padding: default_pack_atlas_padding(),
+            allow_rotation: false,
+            sort_mode: AtlasSortMode::None,
+        }
+    }
+}
+
+/// Request to pack multiple assets into a texture atlas.
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PackAtlasRequest {
+    pub project_id: String,
+    pub atlas_name: String,
+    pub source_asset_ids: Vec<String>,
+    #[serde(default)]
+    pub options: PackAtlasOptions,
+}
+
+/// Region within an atlas manifest.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AtlasRegion {
+    pub asset_id: String,
+    pub name: String,
+    pub x: u32,
+    pub y: u32,
+    pub w: u32,
+    pub h: u32,
+    pub source_width: u32,
+    pub source_height: u32,
+    pub rotated: bool,
+}
+
+/// Atlas manifest JSON structure.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AtlasManifest {
+    pub version: u32,
+    pub atlas_name: String,
+    pub atlas_width: u32,
+    pub atlas_height: u32,
+    pub regions: Vec<AtlasRegion>,
+}
+
+/// Operation payload for atlas pack worker.
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PackAtlasOperation {
+    pub project_id: String,
+    pub atlas_name: String,
+    pub source_assets: Vec<PackAtlasSourceAsset>,
+    pub options: PackAtlasOptions,
+}
+
+/// Source asset info embedded in the pack operation.
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PackAtlasSourceAsset {
+    pub asset_id: String,
+    pub name: String,
+    pub file_path: String,
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

@@ -1,5 +1,5 @@
 import { writable, derived } from 'svelte/store';
-import type { AssetResponse, AssetKind, GenerateImageRequest, GenerateAudioRequest, GenerateTtsRequest, RemoveBackgroundRequest, ConvertPixelArtRequest, GenerateTileRequest, GenerateSpriteSheetRequest, SliceSpriteSheetRequest, GenerateCodeRequest, InpaintRequest, OutpaintRequest, GenerateMaterialRequest, CreateAnimationRequest, UpdateAnimationRequest, AnimationResponse } from '$lib/types/asset';
+import type { AssetResponse, AssetKind, GenerateImageRequest, GenerateAudioRequest, GenerateTtsRequest, RemoveBackgroundRequest, ConvertPixelArtRequest, GenerateTileRequest, GenerateSpriteSheetRequest, SliceSpriteSheetRequest, GenerateCodeRequest, InpaintRequest, OutpaintRequest, GenerateMaterialRequest, CreateAnimationRequest, UpdateAnimationRequest, AnimationResponse, PackAtlasRequest } from '$lib/types/asset';
 import * as assetApi from '$lib/api/assets';
 
 interface AssetState {
@@ -143,6 +143,11 @@ function createAssetStore() {
 
     async exportAnimation(request: { animation_id: string; project_id: string }) {
       const jobId = await assetApi.exportAnimation(request);
+      return jobId;
+    },
+
+    async packAtlas(request: PackAtlasRequest) {
+      const jobId = await assetApi.packAtlas(request);
       return jobId;
     },
   };

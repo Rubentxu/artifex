@@ -16,6 +16,7 @@
   import GenerateMaterialDialog from '$lib/components/GenerateMaterialDialog.svelte';
   import AnimationEditor from '$lib/components/AnimationEditor.svelte';
   import CreateAnimationDialog from '$lib/components/CreateAnimationDialog.svelte';
+  import PackAtlasDialog from '$lib/components/PackAtlasDialog.svelte';
   import JobHistoryPanel from '$lib/components/JobHistoryPanel.svelte';
   import { open } from '@tauri-apps/plugin-dialog';
   import { convertFileSrc } from '@tauri-apps/api/core';
@@ -38,6 +39,7 @@
   let showOutpaintDialog = $state(false);
   let showGenerateMaterialDialog = $state(false);
   let showCreateAnimationDialog = $state(false);
+  let showPackAtlasDialog = $state(false);
   let selectedAssetIdForAction = $state<string | null>(null);
   let importError = $state<string | null>(null);
   let unlistenJobCompleted: (() => void) | null = null;
@@ -59,6 +61,9 @@
   let selectedAnimationAsset = $derived($assetStore.selectedId
     ? $assetStore.assets.find(a => a.id === $assetStore.selectedId && a.kind === 'Animation')
     : null);
+
+  // Derived list of packable assets (Image/Sprite/Tileset) for atlas packing
+  let packableAssets: AssetResponse[] = $derived($assetStore.assets.filter(a => a.kind === 'Image' || a.kind === 'Sprite' || a.kind === 'Tileset'));
 
   // Get image URL for selected asset
   let selectedImageUrl = $derived(selectedImageAsset?.file_path ? convertFileSrc(selectedImageAsset.file_path) : '');
@@ -164,6 +169,10 @@
     selectedAssetIdForAction = assetId;
     showGenerateMaterialDialog = true;
   }
+
+  function handlePackAtlas() {
+    showPackAtlasDialog = true;
+  }
 </script>
 
 <div class="h-full flex flex-col overflow-hidden">
@@ -236,6 +245,17 @@
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>
         Create Animation
+      </button>
+      <button
+        onclick={handlePackAtlas}
+        class="flex items-center gap-2 px-4 py-2 bg-[var(--color-surface)] hover:bg-[var(--color-surface)]/80 rounded-lg transition-colors font-medium"
+        disabled={!$selectedProject || packableAssets.length < 2}
+        title={!$selectedProject ? 'Select a project first' : packableAssets.length < 2 ? 'Need at least 2 Image/Sprite/Tileset assets' : ''}
+      >
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" />
+        </svg>
+        Pack Atlas
       </button>
       <button
         onclick={() => (showGenerateCodeDialog = true)}
@@ -566,6 +586,18 @@
     availableFrames={imageAssets}
     onclose={() => {
       showCreateAnimationDialog = false;
+    }}
+  />
+{/if}
+
+<!-- Pack Atlas Dialog -->
+{#if showPackAtlasDialog && $selectedProject}
+  <PackAtlasDialog
+    open={showPackAtlasDialog}
+    projectId={$selectedProject.id}
+    availableAssets={packableAssets}
+    onclose={() => {
+      showPackAtlasDialog = false;
     }}
   />
 {/if}

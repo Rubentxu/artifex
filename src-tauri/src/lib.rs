@@ -22,7 +22,7 @@ use commands::{
     generate_code, generate_image, generate_material, generate_sprite_sheet, generate_tile,
     get_animation, get_asset, get_job, get_project, import_asset, inpaint_image, list_animations,
     list_assets, list_code_templates, list_jobs, list_projects, open_project, outpaint_image,
-    register_asset, remove_background, rename_project, slice_sprite_sheet, synthesize_speech,
+    pack_atlas, register_asset, remove_background, rename_project, slice_sprite_sheet, synthesize_speech,
     update_animation,
 };
 use model_config::{
@@ -37,7 +37,7 @@ use artifex_model_config::credential_store::CredentialStore;
 use artifex_model_config::ModelRouter;
 use repositories::{SqliteAssetRepository, SqliteJobRepository, SqliteProjectRepository};
 use state::AppState;
-use workers::{AnimationExportWorker, AudioGenWorker, CodeWorker, ImageGenWorker, ImageProcessWorker, MaterialWorker, SliceWorker, SpriteWorker, TileWorker, WorkerRunner};
+use workers::{AnimationExportWorker, AtlasPackWorker, AudioGenWorker, CodeWorker, ImageGenWorker, ImageProcessWorker, MaterialWorker, SliceWorker, SpriteWorker, TileWorker, WorkerRunner};
 
 /// Attempts to create a keychain credential store.
 ///
@@ -162,8 +162,9 @@ pub fn run_app() {
                 assets_dir.clone(),
             ));
             let animation_export_worker = Arc::new(AnimationExportWorker::new(assets_dir.clone()));
+            let atlas_pack_worker = Arc::new(AtlasPackWorker::new(assets_dir.clone()));
             let worker_runner = WorkerRunner::with_app_handle(
-                vec![image_worker, image_process_worker, tile_worker, audio_worker, sprite_worker, slice_worker, code_worker, material_worker, animation_export_worker],
+                vec![image_worker, image_process_worker, tile_worker, audio_worker, sprite_worker, slice_worker, code_worker, material_worker, animation_export_worker, atlas_pack_worker],
                 job_repo.clone(),
                 asset_service.clone(),
                 app.handle().clone(),
@@ -231,6 +232,7 @@ pub fn run_app() {
             generate_tile,
             generate_sprite_sheet,
             slice_sprite_sheet,
+            pack_atlas,
             generate_code,
             generate_material,
             list_code_templates,

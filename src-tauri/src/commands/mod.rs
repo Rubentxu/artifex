@@ -1,6 +1,7 @@
 //! IPC command handlers.
 
 pub mod animations;
+pub mod atlas;
 pub mod assets;
 pub mod audio_gen;
 pub mod code_gen;
@@ -18,6 +19,7 @@ pub mod remove_background;
 pub mod slice_sprite_sheet;
 
 pub use animations::{create_animation, delete_animation, export_animation, get_animation, list_animations, update_animation};
+pub use atlas::pack_atlas;
 pub use assets::{delete_asset, get_asset, import_asset, list_assets, register_asset};
 pub use audio_gen::{generate_audio, synthesize_speech};
 pub use code_gen::generate_code;
