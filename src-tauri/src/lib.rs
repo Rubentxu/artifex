@@ -71,10 +71,13 @@ pub fn run_app() {
 
             let db_path = app_dir.join("artifex.db");
 
-            // Initialize database pool synchronously using the current tokio runtime
-            let pool = tokio::runtime::Handle::current()
-                .block_on(db::init_db_pool(&db_path))
-                .map_err(|e| format!("Failed to initialize database: {}", e))?;
+            // Initialize database pool.
+            // Use block_in_place to allow blocking inside an async context
+            // (tauri-driver launches the app within a tokio runtime).
+            let pool = tokio::task::block_in_place(|| {
+                tokio::runtime::Handle::current().block_on(db::init_db_pool(&db_path))
+            })
+            .map_err(|e| format!("Failed to initialize database: {}", e))?;
 
             // Create repositories
             let project_repo = Arc::new(SqliteProjectRepository::new(pool.clone()));
@@ -121,10 +124,12 @@ pub fn run_app() {
             ));
 
             // Seed default model profiles and routing rules
-            tokio::runtime::Handle::current().block_on(async {
-                if let Err(e) = model_config_service.seed_defaults().await {
-                    tracing::warn!("Failed to seed default model config: {}", e);
-                }
+            tokio::task::block_in_place(|| {
+                tokio::runtime::Handle::current().block_on(async {
+                    if let Err(e) = model_config_service.seed_defaults().await {
+                        tracing::warn!("Failed to seed default model config: {}", e);
+                    }
+                })
             });
 
             // Create worker infrastructure
