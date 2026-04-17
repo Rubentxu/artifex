@@ -11,8 +11,11 @@
   import RemoveBackgroundDialog from '$lib/components/RemoveBackgroundDialog.svelte';
   import ConvertPixelArtDialog from '$lib/components/ConvertPixelArtDialog.svelte';
   import GenerateCodeDialog from '$lib/components/GenerateCodeDialog.svelte';
+  import InpaintDialog from '$lib/components/InpaintDialog.svelte';
+  import OutpaintDialog from '$lib/components/OutpaintDialog.svelte';
   import JobHistoryPanel from '$lib/components/JobHistoryPanel.svelte';
   import { open } from '@tauri-apps/plugin-dialog';
+  import { convertFileSrc } from '@tauri-apps/api/core';
   import type { AssetKind, AssetResponse } from '$lib/types/asset';
 
   interface JobCompletedPayload {
@@ -28,6 +31,8 @@
   let showRemoveBackgroundDialog = $state(false);
   let showConvertPixelArtDialog = $state(false);
   let showGenerateCodeDialog = $state(false);
+  let showInpaintDialog = $state(false);
+  let showOutpaintDialog = $state(false);
   let selectedAssetIdForAction = $state<string | null>(null);
   let importError = $state<string | null>(null);
   let unlistenJobCompleted: (() => void) | null = null;
@@ -39,6 +44,14 @@
 
   // Derived list of image/sprite assets for sprite sheet slicing
   let imageAssets: AssetResponse[] = $derived($assetStore.assets.filter(a => a.kind === 'Image' || a.kind === 'Sprite'));
+
+  // Derived selected image asset for inpaint/outpaint
+  let selectedImageAsset = $derived($assetStore.selectedId
+    ? $assetStore.assets.find(a => a.id === $assetStore.selectedId && (a.kind === 'Image' || a.kind === 'Sprite' || a.kind === 'Tileset' || a.kind === 'Material'))
+    : null);
+
+  // Get image URL for selected asset
+  let selectedImageUrl = $derived(selectedImageAsset?.file_path ? convertFileSrc(selectedImageAsset.file_path) : '');
 
   onMount(async () => {
     if ($selectedProject) {
@@ -125,6 +138,16 @@
 
   function handleSliceSpriteSheet() {
     showSliceSpriteSheetDialog = true;
+  }
+
+  function handleInpaint(assetId: string) {
+    selectedAssetIdForAction = assetId;
+    showInpaintDialog = true;
+  }
+
+  function handleOutpaint(assetId: string) {
+    selectedAssetIdForAction = assetId;
+    showOutpaintDialog = true;
   }
 </script>
 
@@ -253,6 +276,24 @@
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" />
             </svg>
             Convert to Pixel Art
+          </button>
+          <button
+            onclick={() => handleInpaint($assetStore.selectedId!)}
+            class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--color-surface)] hover:bg-[var(--color-surface)]/80 transition-colors text-sm font-medium"
+          >
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+            </svg>
+            Inpaint
+          </button>
+          <button
+            onclick={() => handleOutpaint($assetStore.selectedId!)}
+            class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--color-surface)] hover:bg-[var(--color-surface)]/80 transition-colors text-sm font-medium"
+          >
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+            </svg>
+            Outpaint
           </button>
         </div>
       </div>
@@ -424,5 +465,37 @@
     open={showGenerateCodeDialog}
     projectId={$selectedProject.id}
     onclose={() => (showGenerateCodeDialog = false)}
+  />
+{/if}
+
+<!-- Inpaint Dialog -->
+{#if showInpaintDialog && $selectedProject && selectedAssetIdForAction && selectedImageAsset}
+  <InpaintDialog
+    open={showInpaintDialog}
+    projectId={$selectedProject.id}
+    assetId={selectedAssetIdForAction}
+    imageUrl={selectedImageUrl}
+    imageWidth={selectedImageAsset.width ?? 512}
+    imageHeight={selectedImageAsset.height ?? 512}
+    onclose={() => {
+      showInpaintDialog = false;
+      selectedAssetIdForAction = null;
+    }}
+  />
+{/if}
+
+<!-- Outpaint Dialog -->
+{#if showOutpaintDialog && $selectedProject && selectedAssetIdForAction && selectedImageAsset}
+  <OutpaintDialog
+    open={showOutpaintDialog}
+    projectId={$selectedProject.id}
+    assetId={selectedAssetIdForAction}
+    imageUrl={selectedImageUrl}
+    imageWidth={selectedImageAsset.width ?? 512}
+    imageHeight={selectedImageAsset.height ?? 512}
+    onclose={() => {
+      showOutpaintDialog = false;
+      selectedAssetIdForAction = null;
+    }}
   />
 {/if}

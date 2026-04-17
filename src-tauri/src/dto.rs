@@ -430,6 +430,95 @@ fn default_code_max_tokens() -> u32 {
     4096
 }
 
+/// Request type for inpainting an image.
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct InpaintRequest {
+    pub project_id: String,
+    pub asset_id: String,
+    /// Path to the mask file (written by frontend).
+    pub mask_path: String,
+    /// Text prompt describing the desired edit.
+    pub prompt: String,
+    /// Optional negative prompt.
+    #[serde(default)]
+    pub negative_prompt: Option<String>,
+    /// How strongly to follow the mask (0.0-1.0).
+    #[serde(default = "default_inpaint_strength")]
+    pub strength: f32,
+    /// Guidance scale (1.0-20.0).
+    #[serde(default = "default_inpaint_guidance")]
+    pub guidance_scale: f32,
+    /// Inference steps.
+    #[serde(default = "default_inpaint_steps")]
+    pub steps: u32,
+    /// Optional provider mode override.
+    #[serde(default)]
+    pub provider_mode: Option<String>,
+}
+
+fn default_inpaint_strength() -> f32 {
+    0.8
+}
+
+fn default_inpaint_guidance() -> f32 {
+    7.5
+}
+
+fn default_inpaint_steps() -> u32 {
+    30
+}
+
+/// Direction for outpainting.
+#[derive(Debug, Clone, Copy, PartialEq, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum OutpaintDirection {
+    Left,
+    Right,
+    Top,
+    Bottom,
+}
+
+impl Default for OutpaintDirection {
+    fn default() -> Self {
+        OutpaintDirection::Right
+    }
+}
+
+/// Request type for outpainting an image.
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct OutpaintRequest {
+    pub project_id: String,
+    pub asset_id: String,
+    /// Direction to extend the canvas.
+    pub direction: OutpaintDirection,
+    /// Number of pixels to extend.
+    #[serde(default = "default_outpaint_extension")]
+    pub extend_pixels: u32,
+    /// Text prompt describing the desired fill.
+    pub prompt: String,
+    /// Optional negative prompt.
+    #[serde(default)]
+    pub negative_prompt: Option<String>,
+    /// How strongly to follow the prompt (0.0-1.0).
+    #[serde(default = "default_inpaint_strength")]
+    pub strength: f32,
+    /// Guidance scale (1.0-20.0).
+    #[serde(default = "default_inpaint_guidance")]
+    pub guidance_scale: f32,
+    /// Inference steps.
+    #[serde(default = "default_inpaint_steps")]
+    pub steps: u32,
+    /// Optional provider mode override.
+    #[serde(default)]
+    pub provider_mode: Option<String>,
+}
+
+fn default_outpaint_extension() -> u32 {
+    256
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

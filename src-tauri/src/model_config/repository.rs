@@ -794,6 +794,57 @@ pub async fn seed_defaults(pool: &SqlitePool) -> Result<(), ArtifexError> {
         let _ = create_rule(pool, &rule).await;
     }
 
+    // Seed inpainting and outpainting profiles and routing rules
+    let imageedit_profiles = vec![
+        ModelProfile::new(
+            "fal".to_string(),
+            "fal-ai/flux-fill-dev".to_string(),
+            "Flux Fill (Fal)".to_string(),
+            vec![ModelCapability::ImageEdit],
+        ),
+        ModelProfile::new(
+            "replicate".to_string(),
+            "stability-ai/sdxl-inpainting:0.1.0".to_string(),
+            "SDXL Inpainting (Replicate)".to_string(),
+            vec![ModelCapability::ImageEdit],
+        ),
+    ];
+
+    let mut imageedit_profile_ids = std::collections::HashMap::new();
+    for profile in imageedit_profiles {
+        imageedit_profile_ids.insert(profile.display_name.clone(), profile.id);
+        let _ = create_profile(pool, &profile).await;
+    }
+
+    let imageedit_rules = vec![
+        RoutingRule::new(
+            "imageedit.inpaint".to_string(),
+            *imageedit_profile_ids
+                .get("Flux Fill (Fal)")
+                .expect("profile exists"),
+            vec![
+                *imageedit_profile_ids
+                    .get("SDXL Inpainting (Replicate)")
+                    .expect("profile exists"),
+            ],
+        ),
+        RoutingRule::new(
+            "imageedit.outpaint".to_string(),
+            *imageedit_profile_ids
+                .get("Flux Fill (Fal)")
+                .expect("profile exists"),
+            vec![
+                *imageedit_profile_ids
+                    .get("SDXL Inpainting (Replicate)")
+                    .expect("profile exists"),
+            ],
+        ),
+    ];
+
+    for rule in imageedit_rules {
+        let _ = create_rule(pool, &rule).await;
+    }
+
     // Seed tile generation profiles
     let tilegen_profiles = vec![
         ModelProfile::new(

@@ -161,3 +161,30 @@ export interface SliceSpriteSheetRequest {
   grid_params?: GridSliceParams;
   auto_detect_params?: AutoDetectSliceParams;
 }
+
+export type OutpaintDirection = 'left' | 'right' | 'top' | 'bottom';
+
+export interface InpaintRequest {
+  project_id: string;
+  asset_id: string;
+  mask_path: string;
+  prompt: string;
+  negative_prompt?: string;
+  strength?: number;
+  guidance_scale?: number;
+  steps?: number;
+  provider_mode?: string;
+}
+
+export interface OutpaintRequest {
+  project_id: string;
+  asset_id: string;
+  direction: OutpaintDirection;
+  extend_pixels: number;
+  prompt: string;
+  negative_prompt?: string;
+  strength?: number;
+  guidance_scale?: number;
+  steps?: number;
+  provider_mode?: string;
+}

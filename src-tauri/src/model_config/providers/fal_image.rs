@@ -7,7 +7,7 @@ use reqwest::Client;
 use serde::{Deserialize, Serialize};
 
 use artifex_model_config::{
-    image_provider::{ImageGenParams, ImageGenResult, ImageProvider},
+    image_provider::{ImageEditParams, ImageGenParams, ImageGenResult, ImageProvider},
     provider::{AuthType, ModelCapability, ProviderError, ProviderKind, ProviderMetadata},
 };
 
@@ -28,7 +28,7 @@ impl FalImageProvider {
                 name: "Fal".to_string(),
                 kind: ProviderKind::Fal,
                 base_url: "https://queue.fal.run".to_string(),
-                supported_capabilities: vec![ModelCapability::ImageGen],
+                supported_capabilities: vec![ModelCapability::ImageGen, ModelCapability::ImageEdit],
                 auth_type: AuthType::ApiKey,
             },
         }
@@ -43,7 +43,7 @@ impl FalImageProvider {
                 name: "Fal".to_string(),
                 kind: ProviderKind::Fal,
                 base_url: "https://queue.fal.run".to_string(),
-                supported_capabilities: vec![ModelCapability::ImageGen],
+                supported_capabilities: vec![ModelCapability::ImageGen, ModelCapability::ImageEdit],
                 auth_type: AuthType::ApiKey,
             },
         }
@@ -217,6 +217,98 @@ impl ImageProvider for FalImageProvider {
         Ok(ImageGenResult::new(result_data, 0, 0, "png"))
     }
 
+    async fn inpaint(
+        &self,
+        image_data: &[u8],
+        mask_data: &[u8],
+        params: &ImageEditParams,
+        api_key: &str,
+    ) -> Result<ImageGenResult, ProviderError> {
+        use base64::Engine;
+
+        // Validate params
+        params.validate().map_err(|e| {
+            ProviderError::ProviderSpecific("fal".to_string(), e)
+        })?;
+
+        // Use flux-fill-dev model for inpainting
+        let model_id = params
+            .model_id
+            .clone()
+            .unwrap_or_else(|| "fal-ai/flux-fill-dev".to_string());
+
+        // Encode image and mask to base64
+        let image_b64 = base64::engine::general_purpose::STANDARD.encode(image_data);
+        let mask_b64 = base64::engine::general_purpose::STANDARD.encode(mask_data);
+
+        // Create request for inpainting using Fal's flux-fill endpoint
+        // The input format expects base64 images as data URIs
+        let request_body = FalInpaintRequest {
+            model: model_id.clone(),
+            input: FalInpaintInput {
+                image_url: format!("data:image/png;base64,{}", image_b64),
+                mask_url: format!("data:image/png;base64,{}", mask_b64),
+                prompt: params.prompt.clone(),
+                negative_prompt: params.negative_prompt.clone(),
+                guidance_scale: params.guidance_scale,
+                num_inference_steps: params.num_inference_steps,
+                seed: params.seed,
+            },
+        };
+
+        // Submit to queue
+        let response = self
+            .http_client
+            .post(format!("https://queue.fal.run/{}", model_id))
+            .header("Authorization", format!("Key {}", api_key))
+            .header("Content-Type", "application/json")
+            .json(&request_body)
+            .send()
+            .await
+            .map_err(|e| ProviderError::NetworkError(e.to_string()))?;
+
+        if !response.status().is_success() {
+            return Err(map_fal_error(response.status().as_u16(), response.text().await.unwrap_or_default()).await);
+        }
+
+        let queue_response: FalQueueResponse = response
+            .json()
+            .await
+            .map_err(|e| ProviderError::ProviderSpecific("fal".to_string(), e.to_string()))?;
+
+        // Poll for completion
+        let final_result = self.poll_result(&queue_response.request_id, api_key).await?;
+
+        // Fetch the actual image data
+        let image_url = final_result
+            .images
+            .first()
+            .map(|img| img.url.as_str())
+            .ok_or_else(|| {
+                ProviderError::ProviderSpecific(
+                    "fal".to_string(),
+                    "No images in response".to_string(),
+                )
+            })?;
+
+        let image_response = self
+            .http_client
+            .get(image_url)
+            .send()
+            .await
+            .map_err(|e| ProviderError::NetworkError(e.to_string()))?;
+
+        let result_data = image_response
+            .bytes()
+            .await
+            .map_err(|e| ProviderError::NetworkError(e.to_string()))?
+            .to_vec();
+
+        // Get image dimensions from the result
+        // We don't know the exact dimensions without decoding, so use 0 as placeholder
+        Ok(ImageGenResult::new(result_data, 0, 0, "png"))
+    }
+
     fn metadata(&self) -> &ProviderMetadata {
         &self.metadata
     }
@@ -367,6 +459,36 @@ struct FalResultResponse {
 #[derive(Debug, Deserialize)]
 struct FalImage {
     url: String,
+}
+
+/// Request body for Fal inpainting API.
+#[derive(Debug, Serialize)]
+struct FalInpaintRequest {
+    model: String,
+    input: FalInpaintInput,
+}
+
+/// Input parameters for Fal inpainting API.
+#[derive(Debug, Serialize)]
+struct FalInpaintInput {
+    /// Base64-encoded image or URL to the image.
+    image_url: String,
+    /// Base64-encoded mask or URL to the mask (white = edit region).
+    mask_url: String,
+    /// Text prompt for the edit.
+    prompt: String,
+    /// Optional negative prompt.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    negative_prompt: Option<String>,
+    /// Guidance scale.
+    #[serde(rename = "guidance_scale")]
+    guidance_scale: f32,
+    /// Number of inference steps.
+    #[serde(rename = "num_inference_steps")]
+    num_inference_steps: u32,
+    /// Optional seed for reproducibility.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    seed: Option<u64>,
 }
 
 #[cfg(test)]

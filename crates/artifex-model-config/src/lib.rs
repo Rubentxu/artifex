@@ -18,7 +18,7 @@ pub mod tts_provider;
 // Re-export commonly used types
 pub use audio_provider::{AudioGenParams, AudioGenResult, AudioProvider};
 pub use credential_store::{CredentialStore, CredentialError, InMemoryCredentialStore};
-pub use image_provider::{ImageGenParams, ImageGenResult, ImageProvider};
+pub use image_provider::{ImageEditParams, ImageGenParams, ImageGenResult, ImageProvider};
 pub use model_profile::{ModelProfile, PricingTier};
 pub use prompt_template::PromptTemplate;
 pub use provider::{ProviderError, ProviderKind, ModelCapability, ProviderMetadata, AuthType};

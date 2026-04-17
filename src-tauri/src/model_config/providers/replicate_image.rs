@@ -7,7 +7,7 @@ use reqwest::Client;
 use serde::{Deserialize, Serialize};
 
 use artifex_model_config::{
-    image_provider::{ImageGenParams, ImageGenResult, ImageProvider},
+    image_provider::{ImageEditParams, ImageGenParams, ImageGenResult, ImageProvider},
     provider::{AuthType, ModelCapability, ProviderError, ProviderKind, ProviderMetadata},
 };
 
@@ -28,7 +28,7 @@ impl ReplicateImageProvider {
                 name: "Replicate".to_string(),
                 kind: ProviderKind::Replicate,
                 base_url: "https://api.replicate.com/v1".to_string(),
-                supported_capabilities: vec![ModelCapability::ImageGen],
+                supported_capabilities: vec![ModelCapability::ImageGen, ModelCapability::ImageEdit],
                 auth_type: AuthType::ApiKey,
             },
         }
@@ -43,7 +43,7 @@ impl ReplicateImageProvider {
                 name: "Replicate".to_string(),
                 kind: ProviderKind::Replicate,
                 base_url: "https://api.replicate.com/v1".to_string(),
-                supported_capabilities: vec![ModelCapability::ImageGen],
+                supported_capabilities: vec![ModelCapability::ImageGen, ModelCapability::ImageEdit],
                 auth_type: AuthType::ApiKey,
             },
         }
@@ -247,6 +247,111 @@ impl ImageProvider for ReplicateImageProvider {
         // Get dimensions from the result image
         // For background removal, we return the same dimensions as input
         // We don't know the exact dimensions without decoding, so use 0 as placeholder
+        Ok(ImageGenResult::new(result_data, 0, 0, "png"))
+    }
+
+    async fn inpaint(
+        &self,
+        image_data: &[u8],
+        mask_data: &[u8],
+        params: &ImageEditParams,
+        api_key: &str,
+    ) -> Result<ImageGenResult, ProviderError> {
+        use base64::Engine;
+
+        // Validate params
+        params.validate().map_err(|e| {
+            ProviderError::ProviderSpecific("replicate".to_string(), e)
+        })?;
+
+        // Use SDXL inpainting model as default
+        let model_version = params
+            .model_id
+            .clone()
+            .unwrap_or_else(|| "stability-ai/sdxl-inpainting:0.1.0".to_string());
+
+        // Encode image and mask to base64
+        let image_b64 = base64::engine::general_purpose::STANDARD.encode(image_data);
+        let mask_b64 = base64::engine::general_purpose::STANDARD.encode(mask_data);
+
+        // Create prediction request for inpainting
+        let request_body = serde_json::json!({
+            "version": model_version,
+            "input": {
+                "prompt": params.prompt,
+                "negative_prompt": params.negative_prompt,
+                "image": format!("data:image/png;base64,{}", image_b64),
+                "mask": format!("data:image/png;base64,{}", mask_b64),
+                "guidance_scale": params.guidance_scale,
+                "num_inference_steps": params.num_inference_steps,
+                "seed": params.seed,
+            }
+        });
+
+        // Start prediction
+        let response = self
+            .http_client
+            .post("https://api.replicate.com/v1/predictions")
+            .header("Authorization", format!("Bearer {}", api_key))
+            .header("Content-Type", "application/json")
+            .json(&request_body)
+            .send()
+            .await
+            .map_err(|e| ProviderError::NetworkError(e.to_string()))?;
+
+        if !response.status().is_success() {
+            return Err(map_replicate_error(response.status().as_u16(), response.text().await.unwrap_or_default()).await);
+        }
+
+        let prediction: ReplicatePredictionResponse = response
+            .json()
+            .await
+            .map_err(|e| ProviderError::ProviderSpecific("replicate".to_string(), e.to_string()))?;
+
+        // Poll for completion
+        let final_prediction = self.poll_prediction(&prediction.urls.poll, api_key).await?;
+
+        // Get output image
+        let output_url: String = if let Some(output) = final_prediction.output {
+            if let Some(arr) = output.as_array() {
+                arr.first()
+                    .and_then(|v| v.as_str())
+                    .map(|s| s.to_string())
+                    .ok_or_else(|| {
+                        ProviderError::ProviderSpecific(
+                            "replicate".to_string(),
+                            "Output array element is not a string".to_string(),
+                        )
+                    })?
+            } else if let Some(s) = output.as_str() {
+                s.to_string()
+            } else {
+                return Err(ProviderError::ProviderSpecific(
+                    "replicate".to_string(),
+                    "Output is not a valid URL string or array".to_string(),
+                ));
+            }
+        } else {
+            return Err(ProviderError::ProviderSpecific(
+                "replicate".to_string(),
+                "No output in prediction response".to_string(),
+            ));
+        };
+
+        // Fetch the actual image data
+        let image_response = self
+            .http_client
+            .get(output_url)
+            .send()
+            .await
+            .map_err(|e| ProviderError::NetworkError(e.to_string()))?;
+
+        let result_data = image_response
+            .bytes()
+            .await
+            .map_err(|e| ProviderError::NetworkError(e.to_string()))?
+            .to_vec();
+
         Ok(ImageGenResult::new(result_data, 0, 0, "png"))
     }
 

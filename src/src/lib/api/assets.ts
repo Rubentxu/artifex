@@ -1,6 +1,6 @@
 import type { StorageBackend } from './storage-backend';
 import { TauriBackend } from './tauri-backend';
-import type { AssetResponse, ImportAssetRequest, GenerateImageRequest, GenerateAudioRequest, GenerateTtsRequest, RemoveBackgroundRequest, ConvertPixelArtRequest, GenerateTileRequest, GenerateSpriteSheetRequest, SliceSpriteSheetRequest, GenerateCodeRequest } from '$lib/types/asset';
+import type { AssetResponse, ImportAssetRequest, GenerateImageRequest, GenerateAudioRequest, GenerateTtsRequest, RemoveBackgroundRequest, ConvertPixelArtRequest, GenerateTileRequest, GenerateSpriteSheetRequest, SliceSpriteSheetRequest, GenerateCodeRequest, InpaintRequest, OutpaintRequest } from '$lib/types/asset';
 
 let backend: StorageBackend;
 export function setBackend(b: StorageBackend): void {
@@ -75,4 +75,14 @@ export async function generateCode(request: GenerateCodeRequest): Promise<string
 
 export async function listCodeTemplates(engine: string): Promise<import('$lib/types/asset').CodeTemplate[]> {
   return getBackend().invoke<import('$lib/types/asset').CodeTemplate[]>('list_code_templates', { engine });
+}
+
+export async function inpaintImage(request: InpaintRequest): Promise<string> {
+  // Returns job_id
+  return getBackend().invoke<string>('inpaint_image', { request });
+}
+
+export async function outpaintImage(request: OutpaintRequest): Promise<string> {
+  // Returns job_id
+  return getBackend().invoke<string>('outpaint_image', { request });
 }

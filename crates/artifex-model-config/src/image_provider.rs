@@ -4,6 +4,76 @@ use serde::{Deserialize, Serialize};
 
 use super::provider::{ProviderError, ProviderMetadata};
 
+/// Parameters for image editing (inpainting/outpainting).
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ImageEditParams {
+    /// The prompt describing the desired edit.
+    pub prompt: String,
+    /// Optional negative prompt (things to avoid).
+    #[serde(default)]
+    pub negative_prompt: Option<String>,
+    /// How strongly to follow the mask (0.0–1.0). Default 0.8.
+    #[serde(default = "default_edit_strength")]
+    pub strength: f32,
+    /// Guidance scale (1.0–20.0). Default 7.5.
+    #[serde(default = "default_edit_guidance_scale")]
+    pub guidance_scale: f32,
+    /// Inference steps. Default 30.
+    #[serde(default = "default_edit_steps")]
+    pub num_inference_steps: u32,
+    /// Optional seed for reproducibility.
+    #[serde(default)]
+    pub seed: Option<u64>,
+    /// Optional model ID to use.
+    #[serde(default)]
+    pub model_id: Option<String>,
+}
+
+fn default_edit_strength() -> f32 {
+    0.8
+}
+
+fn default_edit_guidance_scale() -> f32 {
+    7.5
+}
+
+fn default_edit_steps() -> u32 {
+    30
+}
+
+impl ImageEditParams {
+    /// Validates the image edit parameters.
+    pub fn validate(&self) -> Result<(), String> {
+        if self.prompt.is_empty() {
+            return Err("Prompt cannot be empty".to_string());
+        }
+        if self.strength < 0.0 || self.strength > 1.0 {
+            return Err("Strength must be between 0.0 and 1.0".to_string());
+        }
+        if self.guidance_scale < 1.0 || self.guidance_scale > 20.0 {
+            return Err("Guidance scale must be between 1.0 and 20.0".to_string());
+        }
+        if self.num_inference_steps == 0 || self.num_inference_steps > 500 {
+            return Err("Steps must be between 1 and 500".to_string());
+        }
+        Ok(())
+    }
+}
+
+impl Default for ImageEditParams {
+    fn default() -> Self {
+        Self {
+            prompt: String::new(),
+            negative_prompt: None,
+            strength: 0.8,
+            guidance_scale: 7.5,
+            num_inference_steps: 30,
+            seed: None,
+            model_id: None,
+        }
+    }
+}
+
 /// Parameters for image generation.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ImageGenParams {
@@ -147,6 +217,32 @@ pub trait ImageProvider: Send + Sync {
         api_key: &str,
     ) -> Result<ImageGenResult, ProviderError>;
 
+    /// Inpaints or edits an image using a mask.
+    ///
+    /// White areas in the mask indicate regions to be regenerated.
+    ///
+    /// # Arguments
+    /// * `image_data` - Original image bytes
+    /// * `mask_data` - Mask bytes (white = edit region, black = keep)
+    /// * `params` - Edit parameters including prompt
+    /// * `api_key` - API key for authentication
+    ///
+    /// # Errors
+    /// Returns an error if inpainting fails.
+    async fn inpaint(
+        &self,
+        image_data: &[u8],
+        mask_data: &[u8],
+        params: &ImageEditParams,
+        api_key: &str,
+    ) -> Result<ImageGenResult, ProviderError> {
+        let _ = (image_data, mask_data, params, api_key);
+        Err(ProviderError::ProviderSpecific(
+            self.metadata().id.clone(),
+            "inpaint is not supported by this provider".to_string(),
+        ))
+    }
+
     /// Returns the provider metadata.
     fn metadata(&self) -> &ProviderMetadata;
 }
@@ -246,5 +342,98 @@ mod tests {
         assert_eq!(result.width, 512);
         assert_eq!(result.height, 512);
         assert_eq!(result.format, "png");
+    }
+
+    // === ImageEditParams tests ===
+
+    #[test]
+    fn test_image_edit_params_validate_valid() {
+        let params = ImageEditParams {
+            prompt: "Edit this region".to_string(),
+            negative_prompt: Some("blurry".to_string()),
+            strength: 0.8,
+            guidance_scale: 7.5,
+            num_inference_steps: 30,
+            seed: Some(42),
+            model_id: None,
+        };
+        assert!(params.validate().is_ok());
+    }
+
+    #[test]
+    fn test_image_edit_params_validate_empty_prompt() {
+        let params = ImageEditParams {
+            prompt: "".to_string(),
+            ..Default::default()
+        };
+        assert!(params.validate().is_err());
+        assert!(params.validate().unwrap_err().contains("empty"));
+    }
+
+    #[test]
+    fn test_image_edit_params_validate_strength_out_of_range() {
+        let params_too_low = ImageEditParams {
+            prompt: "Test".to_string(),
+            strength: -0.1,
+            ..Default::default()
+        };
+        assert!(params_too_low.validate().is_err());
+        assert!(params_too_low.validate().unwrap_err().contains("Strength"));
+
+        let params_too_high = ImageEditParams {
+            prompt: "Test".to_string(),
+            strength: 1.5,
+            ..Default::default()
+        };
+        assert!(params_too_high.validate().is_err());
+        assert!(params_too_high.validate().unwrap_err().contains("Strength"));
+    }
+
+    #[test]
+    fn test_image_edit_params_validate_guidance_scale_out_of_range() {
+        let params_low = ImageEditParams {
+            prompt: "Test".to_string(),
+            guidance_scale: 0.5,
+            ..Default::default()
+        };
+        assert!(params_low.validate().is_err());
+        assert!(params_low.validate().unwrap_err().contains("Guidance"));
+
+        let params_high = ImageEditParams {
+            prompt: "Test".to_string(),
+            guidance_scale: 25.0,
+            ..Default::default()
+        };
+        assert!(params_high.validate().is_err());
+        assert!(params_high.validate().unwrap_err().contains("Guidance"));
+    }
+
+    #[test]
+    fn test_image_edit_params_validate_invalid_steps() {
+        let params_zero = ImageEditParams {
+            prompt: "Test".to_string(),
+            num_inference_steps: 0,
+            ..Default::default()
+        };
+        assert!(params_zero.validate().is_err());
+
+        let params_too_high = ImageEditParams {
+            prompt: "Test".to_string(),
+            num_inference_steps: 501,
+            ..Default::default()
+        };
+        assert!(params_too_high.validate().is_err());
+    }
+
+    #[test]
+    fn test_image_edit_params_defaults() {
+        let params = ImageEditParams::default();
+        assert_eq!(params.prompt, "");
+        assert!(params.negative_prompt.is_none());
+        assert_eq!(params.strength, 0.8);
+        assert_eq!(params.guidance_scale, 7.5);
+        assert_eq!(params.num_inference_steps, 30);
+        assert!(params.seed.is_none());
+        assert!(params.model_id.is_none());
     }
 }

@@ -7,6 +7,7 @@ use std::sync::Arc;
 
 use artifex_job_queue::Job;
 use artifex_model_config::credential_store::CredentialStore;
+use artifex_model_config::image_provider::ImageEditParams;
 use artifex_model_config::ModelRouter;
 use artifex_shared_kernel::AppError;
 use image::{Rgb, RgbImage};
@@ -53,6 +54,45 @@ enum DitheringMode {
     FloydSteinberg,
     Bayer,
     Atkinson,
+}
+
+/// Direction for outpainting canvas extension.
+#[derive(Debug, Clone, Copy, PartialEq, serde::Deserialize)]
+#[serde(rename_all = "lowercase")]
+enum OutpaintDirection {
+    Left,
+    Right,
+    Top,
+    Bottom,
+}
+
+/// Payload for inpaint jobs.
+#[derive(Debug, Deserialize)]
+#[allow(dead_code)]
+struct InpaintPayload {
+    source_asset_id: String,
+    source_file_path: String,
+    mask_path: String,
+    prompt: String,
+    negative_prompt: Option<String>,
+    strength: f32,
+    guidance_scale: f32,
+    steps: u32,
+}
+
+/// Payload for outpaint jobs.
+#[derive(Debug, Deserialize)]
+#[allow(dead_code)]
+struct OutpaintPayload {
+    source_asset_id: String,
+    source_file_path: String,
+    direction: OutpaintDirection,
+    extend_pixels: u32,
+    prompt: String,
+    negative_prompt: Option<String>,
+    strength: f32,
+    guidance_scale: f32,
+    steps: u32,
 }
 
 // =============================================================================
@@ -167,7 +207,13 @@ impl ImageProcessWorker {
 
 impl JobWorker for ImageProcessWorker {
     fn can_handle(&self, job_type: &str) -> bool {
-        matches!(job_type, "image_remove_background" | "pixel_art_convert")
+        matches!(
+            job_type,
+            "image_remove_background"
+                | "pixel_art_convert"
+                | "image_inpaint"
+                | "image_outpaint"
+        )
     }
 
     fn process(&self, job: &Job) -> JobFuture {
@@ -319,6 +365,188 @@ impl JobWorker for ImageProcessWorker {
                         }),
                     ))
                 }
+                "image_inpaint" => {
+                    // Deserialize operation JSON
+                    let payload: InpaintPayload = serde_json::from_value(operation)
+                        .map_err(|e| AppError::validation(format!("Invalid job payload: {}", e)))?;
+
+                    // Read source image and mask
+                    let source_bytes = tokio::fs::read(&payload.source_file_path)
+                        .await
+                        .map_err(|e| AppError::io_error(format!("Failed to read source image: {}", e)))?;
+
+                    let mask_bytes = tokio::fs::read(&payload.mask_path)
+                        .await
+                        .map_err(|e| AppError::io_error(format!("Failed to read mask image: {}", e)))?;
+
+                    // Resolve provider using routing key
+                    let resolved = router
+                        .resolve_image("imageedit.inpaint")
+                        .await
+                        .map_err(|e| AppError::internal(format!("Failed to resolve provider: {}", e)))?;
+
+                    // Get credential
+                    let credential_id = format!("{}::api_key", resolved.profile.provider_name);
+                    let api_key = credential_store
+                        .get(&credential_id)
+                        .map_err(|_| AppError::internal(format!("Credential not found for {}", resolved.profile.provider_name)))?;
+
+                    // Build edit params
+                    let edit_params = ImageEditParams {
+                        prompt: payload.prompt,
+                        negative_prompt: payload.negative_prompt,
+                        strength: payload.strength,
+                        guidance_scale: payload.guidance_scale,
+                        num_inference_steps: payload.steps,
+                        seed: None,
+                        model_id: resolved.profile.model_id.clone().into(),
+                    };
+
+                    // Call provider to inpaint
+                    let result = resolved
+                        .provider
+                        .inpaint(&source_bytes, &mask_bytes, &edit_params, &api_key)
+                        .await
+                        .map_err(|e| AppError::internal(format!("Provider error: {}", e)))?;
+
+                    // Build output path
+                    let output_dir = PathBuf::from(&assets_dir)
+                        .join(project_id.into_uuid().to_string())
+                        .join("images");
+
+                    tokio::fs::create_dir_all(&output_dir)
+                        .await
+                        .map_err(|e| AppError::io_error(format!("Failed to create output directory: {}", e)))?;
+
+                    let output_file = output_dir.join(format!("{}_inpainted.png", job_id.into_uuid()));
+
+                    // Save result
+                    tokio::fs::write(&output_file, &result.image_data)
+                        .await
+                        .map_err(|e| AppError::io_error(format!("Failed to write output file: {}", e)))?;
+
+                    // Return result with metadata
+                    Ok(JobResult::with_metadata(
+                        vec![output_file.clone()],
+                        serde_json::json!({
+                            "operation": "inpaint",
+                            "source_asset_id": payload.source_asset_id,
+                            "provider": resolved.profile.provider_name,
+                            "model": resolved.profile.model_id,
+                            "project_id": project_id.into_uuid().to_string(),
+                        }),
+                    ))
+                }
+                "image_outpaint" => {
+                    // Deserialize operation JSON
+                    let payload: OutpaintPayload = serde_json::from_value(operation)
+                        .map_err(|e| AppError::validation(format!("Invalid job payload: {}", e)))?;
+
+                    use image::GenericImageView;
+
+                    // Read source image
+                    let source_bytes = tokio::fs::read(&payload.source_file_path)
+                        .await
+                        .map_err(|e| AppError::io_error(format!("Failed to read source image: {}", e)))?;
+
+                    let source_img = image::load_from_memory(&source_bytes)
+                        .map_err(|e| AppError::internal(format!("Failed to decode source image: {}", e)))?;
+
+                    let (_src_width, _src_height) = source_img.dimensions();
+
+                    // Expand canvas and create mask for new region
+                    let (expanded_img, mask_img) = expand_canvas_with_mask(
+                        &source_img,
+                        &payload.direction,
+                        payload.extend_pixels,
+                    )?;
+
+                    // Save expanded image and mask to temp files for the provider
+                    let temp_dir = std::env::temp_dir();
+                    let expanded_path = temp_dir.join(format!("{}_expanded.png", job_id.into_uuid()));
+                    let mask_path = temp_dir.join(format!("{}_mask.png", job_id.into_uuid()));
+
+                    expanded_img
+                        .save(&expanded_path)
+                        .map_err(|e| AppError::internal(format!("Failed to save expanded image: {}", e)))?;
+
+                    mask_img
+                        .save(&mask_path)
+                        .map_err(|e| AppError::internal(format!("Failed to save mask: {}", e)))?;
+
+                    // Read back the files
+                    let expanded_bytes = tokio::fs::read(&expanded_path)
+                        .await
+                        .map_err(|e| AppError::io_error(format!("Failed to read expanded image: {}", e)))?;
+
+                    let mask_bytes = tokio::fs::read(&mask_path)
+                        .await
+                        .map_err(|e| AppError::io_error(format!("Failed to read mask: {}", e)))?;
+
+                    // Clean up temp files
+                    let _ = tokio::fs::remove_file(&expanded_path).await;
+                    let _ = tokio::fs::remove_file(&mask_path).await;
+
+                    // Resolve provider using routing key
+                    let resolved = router
+                        .resolve_image("imageedit.outpaint")
+                        .await
+                        .map_err(|e| AppError::internal(format!("Failed to resolve provider: {}", e)))?;
+
+                    // Get credential
+                    let credential_id = format!("{}::api_key", resolved.profile.provider_name);
+                    let api_key = credential_store
+                        .get(&credential_id)
+                        .map_err(|_| AppError::internal(format!("Credential not found for {}", resolved.profile.provider_name)))?;
+
+                    // Build edit params
+                    let edit_params = ImageEditParams {
+                        prompt: payload.prompt,
+                        negative_prompt: payload.negative_prompt,
+                        strength: payload.strength,
+                        guidance_scale: payload.guidance_scale,
+                        num_inference_steps: payload.steps,
+                        seed: None,
+                        model_id: resolved.profile.model_id.clone().into(),
+                    };
+
+                    // Call provider to inpaint
+                    let result = resolved
+                        .provider
+                        .inpaint(&expanded_bytes, &mask_bytes, &edit_params, &api_key)
+                        .await
+                        .map_err(|e| AppError::internal(format!("Provider error: {}", e)))?;
+
+                    // Build output path
+                    let output_dir = PathBuf::from(&assets_dir)
+                        .join(project_id.into_uuid().to_string())
+                        .join("images");
+
+                    tokio::fs::create_dir_all(&output_dir)
+                        .await
+                        .map_err(|e| AppError::io_error(format!("Failed to create output directory: {}", e)))?;
+
+                    let output_file = output_dir.join(format!("{}_outpainted.png", job_id.into_uuid()));
+
+                    // Save result
+                    tokio::fs::write(&output_file, &result.image_data)
+                        .await
+                        .map_err(|e| AppError::io_error(format!("Failed to write output file: {}", e)))?;
+
+                    // Return result with metadata
+                    Ok(JobResult::with_metadata(
+                        vec![output_file.clone()],
+                        serde_json::json!({
+                            "operation": "outpaint",
+                            "source_asset_id": payload.source_asset_id,
+                            "direction": format!("{:?}", payload.direction),
+                            "extend_px": payload.extend_pixels,
+                            "provider": resolved.profile.provider_name,
+                            "model": resolved.profile.model_id,
+                            "project_id": project_id.into_uuid().to_string(),
+                        }),
+                    ))
+                }
                 _ => Err(AppError::validation(format!(
                     "Unknown job type for ImageProcessWorker: {}",
                     job_type
@@ -452,6 +680,113 @@ fn apply_outline(img: &RgbImage, threshold: u8) -> RgbImage {
     result
 }
 
+/// Expands an image canvas in the given direction and creates a mask
+/// where the new region is white (to be regenerated) and original is black (to keep).
+///
+/// Returns (expanded_image, mask_image).
+fn expand_canvas_with_mask(
+    source: &image::DynamicImage,
+    direction: &OutpaintDirection,
+    extend_px: u32,
+) -> Result<(image::DynamicImage, RgbImage), AppError> {
+    use image::GenericImageView;
+
+    let (src_width, src_height) = source.dimensions();
+
+    // Calculate new dimensions based on direction
+    let (new_width, new_height, offset_x, offset_y) = match direction {
+        OutpaintDirection::Left => {
+            (src_width + extend_px, src_height, extend_px, 0)
+        }
+        OutpaintDirection::Right => {
+            (src_width + extend_px, src_height, 0, 0)
+        }
+        OutpaintDirection::Top => {
+            (src_width, src_height + extend_px, 0, extend_px)
+        }
+        OutpaintDirection::Bottom => {
+            (src_width, src_height + extend_px, 0, 0)
+        }
+    };
+
+    // Create a new image with the expanded dimensions
+    // Fill with edge pixels from source (padding)
+    let mut expanded: RgbImage = RgbImage::new(new_width, new_height);
+
+    // Fill the expanded canvas with edge-padding from the source image
+    for y in 0..new_height {
+        for x in 0..new_width {
+            // Calculate corresponding source pixel coordinates
+            let src_x = ((x as i32) - (offset_x as i32)).clamp(0, src_width as i32 - 1) as u32;
+            let src_y = ((y as i32) - (offset_y as i32)).clamp(0, src_height as i32 - 1) as u32;
+
+            let pixel = source.get_pixel(src_x, src_y);
+            // Convert RGBA to RGB if needed
+            let r = pixel[0];
+            let g = pixel[1];
+            let b = pixel[2];
+            expanded.put_pixel(x, y, Rgb([r, g, b]));
+        }
+    }
+
+    // Create mask: white (255) for new region, black (0) for original region
+    let mut mask: RgbImage = RgbImage::new(new_width, new_height);
+
+    // The new region is the area that was added
+    match direction {
+        OutpaintDirection::Left => {
+            // New region is on the left (x < offset_x)
+            for y in 0..new_height {
+                for x in 0..offset_x {
+                    mask.put_pixel(x, y, Rgb([255, 255, 255]));
+                }
+                for x in offset_x..new_width {
+                    mask.put_pixel(x, y, Rgb([0, 0, 0]));
+                }
+            }
+        }
+        OutpaintDirection::Right => {
+            // New region is on the right (x >= src_width)
+            for y in 0..new_height {
+                for x in 0..src_width {
+                    mask.put_pixel(x, y, Rgb([0, 0, 0]));
+                }
+                for x in src_width..new_width {
+                    mask.put_pixel(x, y, Rgb([255, 255, 255]));
+                }
+            }
+        }
+        OutpaintDirection::Top => {
+            // New region is on top (y < offset_y)
+            for y in 0..offset_y {
+                for x in 0..new_width {
+                    mask.put_pixel(x, y, Rgb([255, 255, 255]));
+                }
+            }
+            for y in offset_y..new_height {
+                for x in 0..new_width {
+                    mask.put_pixel(x, y, Rgb([0, 0, 0]));
+                }
+            }
+        }
+        OutpaintDirection::Bottom => {
+            // New region is on bottom (y >= src_height)
+            for y in 0..src_height {
+                for x in 0..new_width {
+                    mask.put_pixel(x, y, Rgb([0, 0, 0]));
+                }
+            }
+            for y in src_height..new_height {
+                for x in 0..new_width {
+                    mask.put_pixel(x, y, Rgb([255, 255, 255]));
+                }
+            }
+        }
+    }
+
+    Ok((image::DynamicImage::ImageRgb8(expanded), mask))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -470,6 +805,8 @@ mod tests {
 
         assert!(worker.can_handle("image_remove_background"));
         assert!(worker.can_handle("pixel_art_convert"));
+        assert!(worker.can_handle("image_inpaint"));
+        assert!(worker.can_handle("image_outpaint"));
         assert!(!worker.can_handle("image_generate"));
         assert!(!worker.can_handle("tile_generate"));
     }
@@ -508,6 +845,140 @@ mod tests {
     fn test_gameboy_palette_has_4_colors() {
         // GameBoy palette must have exactly 4 colors
         assert_eq!(PALETTE_GAMEBOY.len(), 4, "GameBoy palette should have 4 colors");
+    }
+
+    #[test]
+    fn test_expand_canvas_right() {
+        // Create a small test image (red)
+        let img = image::RgbImage::from_fn(2, 2, |_x, _y| {
+            Rgb([255, 0, 0])
+        });
+
+        let direction = OutpaintDirection::Right;
+        let extend_px = 2;
+
+        let result = expand_canvas_with_mask(
+            &image::DynamicImage::ImageRgb8(img.clone()),
+            &direction,
+            extend_px,
+        );
+
+        assert!(result.is_ok());
+        let (expanded, mask) = result.unwrap();
+
+        // New dimensions: 4x2
+        assert_eq!(expanded.width(), 4);
+        assert_eq!(expanded.height(), 2);
+        assert_eq!(mask.width(), 4);
+        assert_eq!(mask.height(), 2);
+
+        // Left half (original) should be black in mask
+        // Right half (new) should be white in mask
+        for y in 0..2 {
+            assert_eq!(mask.get_pixel(0, y)[0], 0); // black
+            assert_eq!(mask.get_pixel(1, y)[0], 0); // black
+            assert_eq!(mask.get_pixel(2, y)[0], 255); // white
+            assert_eq!(mask.get_pixel(3, y)[0], 255); // white
+        }
+    }
+
+    #[test]
+    fn test_expand_canvas_left() {
+        // Create a small test image (green)
+        let img = image::RgbImage::from_fn(2, 2, |_x, _y| {
+            Rgb([0, 255, 0])
+        });
+
+        let direction = OutpaintDirection::Left;
+        let extend_px = 2;
+
+        let result = expand_canvas_with_mask(
+            &image::DynamicImage::ImageRgb8(img.clone()),
+            &direction,
+            extend_px,
+        );
+
+        assert!(result.is_ok());
+        let (expanded, mask) = result.unwrap();
+
+        // New dimensions: 4x2
+        assert_eq!(expanded.width(), 4);
+        assert_eq!(expanded.height(), 2);
+
+        // Left half (new) should be white in mask
+        // Right half (original) should be black in mask
+        for y in 0..2 {
+            assert_eq!(mask.get_pixel(0, y)[0], 255); // white
+            assert_eq!(mask.get_pixel(1, y)[0], 255); // white
+            assert_eq!(mask.get_pixel(2, y)[0], 0); // black
+            assert_eq!(mask.get_pixel(3, y)[0], 0); // black
+        }
+    }
+
+    #[test]
+    fn test_expand_canvas_top() {
+        // Create a small test image (blue)
+        let img = image::RgbImage::from_fn(2, 2, |_x, _y| {
+            Rgb([0, 0, 255])
+        });
+
+        let direction = OutpaintDirection::Top;
+        let extend_px = 2;
+
+        let result = expand_canvas_with_mask(
+            &image::DynamicImage::ImageRgb8(img.clone()),
+            &direction,
+            extend_px,
+        );
+
+        assert!(result.is_ok());
+        let (expanded, mask) = result.unwrap();
+
+        // New dimensions: 2x4
+        assert_eq!(expanded.width(), 2);
+        assert_eq!(expanded.height(), 4);
+
+        // Top half (new) should be white in mask
+        // Bottom half (original) should be black in mask
+        for x in 0..2 {
+            assert_eq!(mask.get_pixel(x, 0)[0], 255); // white
+            assert_eq!(mask.get_pixel(x, 1)[0], 255); // white
+            assert_eq!(mask.get_pixel(x, 2)[0], 0); // black
+            assert_eq!(mask.get_pixel(x, 3)[0], 0); // black
+        }
+    }
+
+    #[test]
+    fn test_expand_canvas_bottom() {
+        // Create a small test image
+        let img = image::RgbImage::from_fn(2, 2, |_x, _y| {
+            Rgb([128, 128, 128])
+        });
+
+        let direction = OutpaintDirection::Bottom;
+        let extend_px = 2;
+
+        let result = expand_canvas_with_mask(
+            &image::DynamicImage::ImageRgb8(img.clone()),
+            &direction,
+            extend_px,
+        );
+
+        assert!(result.is_ok());
+        let (expanded, mask) = result.unwrap();
+
+        // New dimensions: 2x4
+        assert_eq!(expanded.width(), 2);
+        assert_eq!(expanded.height(), 4);
+
+        // Top half (original) should be black in mask
+        // Bottom half (new) should be white in mask
+        for x in 0..2 {
+            assert_eq!(mask.get_pixel(x, 0)[0], 0); // black
+            assert_eq!(mask.get_pixel(x, 1)[0], 0); // black
+            assert_eq!(mask.get_pixel(x, 2)[0], 255); // white
+            assert_eq!(mask.get_pixel(x, 3)[0], 255); // white
+        }
     }
 
     // Mock repository for testing

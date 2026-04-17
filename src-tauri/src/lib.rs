@@ -19,7 +19,7 @@ use application::{AssetApplicationService, JobApplicationService, ProjectApplica
 use commands::{
     archive_project, cancel_job, convert_pixel_art, create_job, create_project, delete_asset,
     delete_project, generate_audio, generate_code, generate_image, generate_sprite_sheet, generate_tile, get_asset, get_job, get_project,
-    import_asset, list_assets, list_code_templates, list_jobs, list_projects, open_project, register_asset,
+    import_asset, inpaint_image, list_assets, list_code_templates, list_jobs, list_projects, open_project, outpaint_image, register_asset,
     remove_background, rename_project, slice_sprite_sheet, synthesize_speech,
 };
 use model_config::{
@@ -209,6 +209,8 @@ pub fn run_app() {
             import_asset,
             register_asset,
             remove_background,
+            inpaint_image,
+            outpaint_image,
             convert_pixel_art,
             generate_tile,
             generate_sprite_sheet,
