@@ -259,7 +259,7 @@ impl WorkerRunner {
                         "tts_synthesize" => "voice",
                         "image_generate" | "image_remove_background" | "pixel_art_convert" | "image_inpaint" | "image_outpaint" | "sprite_slice" => "image",
                         "tile_generate" | "seamless_texture" => "tileset",
-                        "sprite_generate" | "pack_atlas" => "sprite",
+                        "sprite_generate" | "pack_atlas" | "quick_sprites" => "sprite",
                         "material_generate" => "material",
                         "code_generate" => "code",
                         "animation_export" => "animation",

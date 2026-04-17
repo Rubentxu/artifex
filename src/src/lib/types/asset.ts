@@ -303,3 +303,31 @@ export interface SeamlessTextureRequest {
   padding_pixels?: number;
   blend_fraction?: number;
 }
+
+// Quick Sprites Generation types
+
+export type QuickSpritesMode = 'FromImage' | 'FromPrompt';
+
+export type QuickSpritesOutputFormat = 'Json' | 'Aseprite' | 'Both';
+
+export interface QuickSpritesOptions {
+  fps?: number;
+  dedup_threshold?: number;
+  atlas_max_size?: number;
+  padding?: number;
+  animation_name?: string;
+  output_format?: QuickSpritesOutputFormat;
+  video_duration_secs?: number;
+  video_seed?: number;
+}
+
+export interface QuickSpritesRequest {
+  project_id: string;
+  mode: QuickSpritesMode;
+  source_image_asset_id?: string;
+  source_file_path?: string;
+  motion_prompt: string;
+  negative_prompt?: string;
+  image_gen_params?: ImageGenParams;
+  options?: QuickSpritesOptions;
+}
