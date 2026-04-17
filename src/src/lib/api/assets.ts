@@ -1,6 +1,6 @@
 import type { StorageBackend } from './storage-backend';
 import { TauriBackend } from './tauri-backend';
-import type { AssetResponse, ImportAssetRequest, GenerateImageRequest, GenerateAudioRequest, GenerateTtsRequest, RemoveBackgroundRequest, ConvertPixelArtRequest, GenerateTileRequest, GenerateSpriteSheetRequest, SliceSpriteSheetRequest, GenerateCodeRequest, InpaintRequest, OutpaintRequest, GenerateMaterialRequest, AnimationResponse, CreateAnimationRequest, UpdateAnimationRequest, ExportAnimationRequest, PackAtlasRequest, SeamlessTextureRequest } from '$lib/types/asset';
+import type { AssetResponse, ImportAssetRequest, GenerateImageRequest, GenerateAudioRequest, GenerateTtsRequest, RemoveBackgroundRequest, ConvertPixelArtRequest, GenerateTileRequest, GenerateSpriteSheetRequest, SliceSpriteSheetRequest, GenerateCodeRequest, InpaintRequest, OutpaintRequest, GenerateMaterialRequest, AnimationResponse, CreateAnimationRequest, UpdateAnimationRequest, ExportAnimationRequest, PackAtlasRequest, SeamlessTextureRequest, GenerateVideoRequest } from '$lib/types/asset';
 
 let backend: StorageBackend;
 export function setBackend(b: StorageBackend): void {
@@ -129,4 +129,9 @@ export async function packAtlas(request: PackAtlasRequest): Promise<string> {
 export async function generateSeamlessTexture(request: SeamlessTextureRequest): Promise<string> {
   // Returns job_id
   return getBackend().invoke<string>('generate_seamless_texture', { request });
+}
+
+export async function generateVideo(request: GenerateVideoRequest): Promise<string> {
+  // Returns job_id
+  return getBackend().invoke<string>('generate_video', { request });
 }

@@ -915,5 +915,45 @@ pub async fn seed_defaults(pool: &SqlitePool) -> Result<(), ArtifexError> {
         }
     }
 
+    // Seed video generation profiles and routing rules
+    let videogen_profiles = vec![
+        ModelProfile::new(
+            "fal".to_string(),
+            "fal-ai/kling-video".to_string(),
+            "Kling Video (Fal)".to_string(),
+            vec![ModelCapability::VideoGen],
+        ),
+        ModelProfile::new(
+            "replicate".to_string(),
+            "minimax/minimax-hyper-svd-video-256w".to_string(),
+            "Minimax Video (Replicate)".to_string(),
+            vec![ModelCapability::VideoGen],
+        ),
+    ];
+
+    let mut videogen_profile_ids = std::collections::HashMap::new();
+    for profile in videogen_profiles {
+        videogen_profile_ids.insert(profile.display_name.clone(), profile.id);
+        let _ = create_profile(pool, &profile).await;
+    }
+
+    let videogen_rules = vec![
+        RoutingRule::new(
+            "videogen.img2video".to_string(),
+            *videogen_profile_ids
+                .get("Kling Video (Fal)")
+                .expect("profile exists"),
+            vec![
+                *videogen_profile_ids
+                    .get("Minimax Video (Replicate)")
+                    .expect("profile exists"),
+            ],
+        ),
+    ];
+
+    for rule in videogen_rules {
+        let _ = create_rule(pool, &rule).await;
+    }
+
     Ok(())
 }

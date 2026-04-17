@@ -263,6 +263,7 @@ impl WorkerRunner {
                         "material_generate" => "material",
                         "code_generate" => "code",
                         "animation_export" => "animation",
+                        "video_generate" => "video",
                         _ => "unknown",
                     };
 

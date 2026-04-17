@@ -198,6 +198,15 @@ export interface GenerateMaterialRequest {
   model_id?: string;
 }
 
+export interface GenerateVideoRequest {
+  project_id: string;
+  source_image_asset_id: string;
+  prompt: string;
+  duration_secs?: number;
+  negative_prompt?: string;
+  seed?: number;
+}
+
 // Animation types
 
 export interface AnimationMetadata {

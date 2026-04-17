@@ -10,6 +10,7 @@ use super::image_provider::ImageProvider;
 use super::provider::ProviderMetadata;
 use super::text_provider::TextProvider;
 use super::tts_provider::TtsProvider;
+use super::video_provider::VideoProvider;
 
 /// Errors that can occur when registering or accessing providers.
 #[derive(Debug, Clone, Error)]
@@ -27,6 +28,7 @@ pub struct ProviderRegistry {
     audio_providers: DashMap<String, Arc<dyn AudioProvider>>,
     tts_providers: DashMap<String, Arc<dyn TtsProvider>>,
     text_providers: DashMap<String, Arc<dyn TextProvider>>,
+    video_providers: DashMap<String, Arc<dyn VideoProvider>>,
 }
 
 impl ProviderRegistry {
@@ -37,6 +39,7 @@ impl ProviderRegistry {
             audio_providers: DashMap::new(),
             tts_providers: DashMap::new(),
             text_providers: DashMap::new(),
+            video_providers: DashMap::new(),
         }
     }
 
@@ -156,12 +159,42 @@ impl ProviderRegistry {
             .collect()
     }
 
+    /// Registers a video provider by its canonical id.
+    ///
+    /// # Errors
+    /// Returns `RegistryError::AlreadyRegistered` if a provider with the same id exists.
+    pub fn register_video(
+        &self,
+        id: &str,
+        provider: Arc<dyn VideoProvider>,
+    ) -> Result<(), RegistryError> {
+        if self.video_providers.contains_key(id) {
+            return Err(RegistryError::AlreadyRegistered(id.to_string()));
+        }
+        self.video_providers.insert(id.to_string(), provider);
+        Ok(())
+    }
+
+    /// Gets a video provider by its canonical id.
+    pub fn get_video(&self, id: &str) -> Option<Arc<dyn VideoProvider>> {
+        self.video_providers.get(id).map(|r| r.value().clone())
+    }
+
+    /// Lists all registered video providers.
+    pub fn list_video_providers(&self) -> Vec<ProviderMetadata> {
+        self.video_providers
+            .iter()
+            .map(|r| r.value().metadata().clone())
+            .collect()
+    }
+
     /// Checks if a provider is registered by its canonical id.
     pub fn is_registered(&self, id: &str) -> bool {
         self.image_providers.contains_key(id)
             || self.audio_providers.contains_key(id)
             || self.tts_providers.contains_key(id)
             || self.text_providers.contains_key(id)
+            || self.video_providers.contains_key(id)
     }
 
     /// Returns the total number of registered providers.
@@ -170,6 +203,7 @@ impl ProviderRegistry {
             + self.audio_providers.len()
             + self.tts_providers.len()
             + self.text_providers.len()
+            + self.video_providers.len()
     }
 
     /// Returns true if no providers are registered.
@@ -178,6 +212,7 @@ impl ProviderRegistry {
             && self.audio_providers.is_empty()
             && self.tts_providers.is_empty()
             && self.text_providers.is_empty()
+            && self.video_providers.is_empty()
     }
 }
 

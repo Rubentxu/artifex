@@ -11,6 +11,7 @@ use super::registry::ProviderRegistry;
 use super::routing_rule::{RoutingRule, MAX_FALLBACK_DEPTH};
 use super::text_provider::TextProvider;
 use super::tts_provider::TtsProvider;
+use super::video_provider::VideoProvider;
 use super::credential_store::CredentialStore;
 
 /// Errors that can occur during routing.
@@ -65,6 +66,14 @@ pub struct ResolvedTextProfile {
     pub profile: Arc<ModelProfile>,
     /// The provider instance.
     pub provider: Arc<dyn TextProvider>,
+}
+
+/// A resolved video profile with its associated provider.
+pub struct ResolvedVideoProfile {
+    /// The model profile.
+    pub profile: Arc<ModelProfile>,
+    /// The provider instance.
+    pub provider: Arc<dyn VideoProvider>,
 }
 
 /// Repository trait for model configuration storage.
@@ -327,6 +336,62 @@ impl ModelRouter {
         Err(RoutingError::NoAvailableProfile(operation_type.to_string()))
     }
 
+    /// Resolves the best model profile for a video generation operation.
+    ///
+    /// Tries the default profile first, then falls back to alternatives in order.
+    pub async fn resolve_video(
+        &self,
+        operation_type: &str,
+    ) -> Result<ResolvedVideoProfile, RoutingError> {
+        let rule = self
+            .repo
+            .find_rule(operation_type)
+            .await
+            .map_err(|e| RoutingError::NoRuleForOperation(e.to_string()))?
+            .ok_or_else(|| RoutingError::NoRuleForOperation(operation_type.to_string()))?;
+
+        // Try each profile in order
+        let mut fallbacks_exhausted = 0;
+        for profile_id in rule.profile_ids() {
+            if fallbacks_exhausted >= MAX_FALLBACK_DEPTH {
+                return Err(RoutingError::MaxFallbackDepthExceeded);
+            }
+
+            let profile = self
+                .repo
+                .find_profile(profile_id)
+                .await
+                .map_err(|e| RoutingError::ProfileNotFound(e.to_string()))?
+                .ok_or_else(|| RoutingError::ProfileNotFound(profile_id.to_string()))?;
+
+            if !profile.enabled {
+                fallbacks_exhausted += 1;
+                continue;
+            }
+
+            let provider = self
+                .registry
+                .get_video(&profile.provider_name)
+                .ok_or_else(|| {
+                    RoutingError::ProviderNotRegistered(profile.provider_name.clone())
+                })?;
+
+            // Verify credential exists
+            let credential_id = format!("{}::api_key", profile.provider_name);
+            if self.credential_store.get(&credential_id).is_err() {
+                fallbacks_exhausted += 1;
+                continue;
+            }
+
+            return Ok(ResolvedVideoProfile {
+                profile: Arc::new(profile),
+                provider,
+            });
+        }
+
+        Err(RoutingError::NoAvailableProfile(operation_type.to_string()))
+    }
+
     /// Resolves a text provider by specific profile ID.
     ///
     /// This bypasses routing rules and directly uses the specified profile.
@@ -560,6 +625,45 @@ mod tests {
                 "Hello, world!".to_string(),
                 50,
                 false,
+            ))
+        }
+
+        fn metadata(&self) -> &ProviderMetadata {
+            &self.metadata
+        }
+    }
+
+    /// Mock video provider for testing.
+    struct MockVideoProvider {
+        metadata: ProviderMetadata,
+    }
+
+    impl MockVideoProvider {
+        fn new(name: &str) -> Self {
+            Self {
+                metadata: ProviderMetadata {
+                    id: name.to_string(),
+                    name: name.to_string(),
+                    kind: ProviderKind::Fal,
+                    base_url: format!("https://api.{}.com", name),
+                    supported_capabilities: vec![ModelCapability::VideoGen],
+                    auth_type: AuthType::ApiKey,
+                },
+            }
+        }
+    }
+
+    #[async_trait]
+    impl VideoProvider for MockVideoProvider {
+        async fn generate_video(
+            &self,
+            _params: &crate::video_provider::VideoGenParams,
+            _api_key: &str,
+        ) -> Result<crate::video_provider::VideoGenResult, ProviderError> {
+            Ok(crate::video_provider::VideoGenResult::new(
+                vec![0, 1, 2],
+                5.0,
+                "mp4",
             ))
         }
 
@@ -844,6 +948,62 @@ mod tests {
             .unwrap()
             .block_on(async {
                 let result = router.resolve_text("unknown.op").await;
+                assert!(matches!(result, Err(RoutingError::NoRuleForOperation(_))));
+            });
+    }
+
+    #[test]
+    fn test_resolve_video_success() {
+        let profile = ModelProfile::new(
+            "fal".to_string(),
+            "fal-ai/kling-video".to_string(),
+            "Kling Video (Fal)".to_string(),
+            vec![ModelCapability::VideoGen],
+        );
+
+        let rule = RoutingRule::new(
+            "videogen.img2video".to_string(),
+            profile.id,
+            vec![],
+        );
+
+        let repo = Arc::new(MockRepository::new(vec![profile.clone()], vec![rule]));
+        let registry = Arc::new(ProviderRegistry::new());
+        let cred_store = Arc::new(crate::credential_store::InMemoryCredentialStore::new());
+
+        // Register provider
+        let provider = Arc::new(MockVideoProvider::new("fal"));
+        registry.register_video("fal", provider).unwrap();
+
+        // Set credential
+        cred_store.set("fal::api_key", "test-key").unwrap();
+
+        let router = ModelRouter::new(registry.clone(), repo.clone(), cred_store);
+
+        tokio::runtime::Builder::new_current_thread()
+            .enable_all()
+            .build()
+            .unwrap()
+            .block_on(async {
+                let resolved = router.resolve_video("videogen.img2video").await.unwrap();
+                assert_eq!(resolved.profile.model_id, "fal-ai/kling-video");
+            });
+    }
+
+    #[test]
+    fn test_resolve_video_no_rule() {
+        let repo = Arc::new(MockRepository::new(vec![], vec![]));
+        let registry = Arc::new(ProviderRegistry::new());
+        let cred_store = Arc::new(crate::credential_store::InMemoryCredentialStore::new());
+
+        let router = ModelRouter::new(registry.clone(), repo.clone(), cred_store);
+
+        tokio::runtime::Builder::new_current_thread()
+            .enable_all()
+            .build()
+            .unwrap()
+            .block_on(async {
+                let result = router.resolve_video("unknown.op").await;
                 assert!(matches!(result, Err(RoutingError::NoRuleForOperation(_))));
             });
     }

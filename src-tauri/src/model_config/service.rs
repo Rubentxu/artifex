@@ -20,9 +20,9 @@ use super::repository::{
 };
 use super::commands::ProviderDto;
 use crate::model_config::providers::{
-    ElevenLabsProvider, FalImageProvider,
+    ElevenLabsProvider, FalImageProvider, FalVideoProvider,
     HuggingFaceImageProvider, KieImageProvider, ReplicateImageProvider,
-    TogetherTextProvider,
+    ReplicateVideoProvider, TogetherTextProvider,
 };
 
 /// Credential status for a provider.
@@ -310,10 +310,22 @@ pub fn register_builtin_providers(registry: &ProviderRegistry) {
         tracing::warn!("Failed to register replicate provider: {}", e);
     }
 
+    // Replicate Video Provider
+    let replicate_video = Arc::new(ReplicateVideoProvider::new());
+    if let Err(e) = registry.register_video("replicate", replicate_video) {
+        tracing::warn!("Failed to register replicate video provider: {}", e);
+    }
+
     // Fal Image Provider
     let fal = Arc::new(FalImageProvider::new());
     if let Err(e) = registry.register_image("fal", fal) {
         tracing::warn!("Failed to register fal provider: {}", e);
+    }
+
+    // Fal Video Provider
+    let fal_video = Arc::new(FalVideoProvider::new());
+    if let Err(e) = registry.register_video("fal", fal_video) {
+        tracing::warn!("Failed to register fal video provider: {}", e);
     }
 
     // HuggingFace Image Provider

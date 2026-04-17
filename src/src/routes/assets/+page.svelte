@@ -14,6 +14,7 @@
   import InpaintDialog from '$lib/components/InpaintDialog.svelte';
   import OutpaintDialog from '$lib/components/OutpaintDialog.svelte';
   import GenerateMaterialDialog from '$lib/components/GenerateMaterialDialog.svelte';
+  import GenerateVideoDialog from '$lib/components/GenerateVideoDialog.svelte';
   import AnimationEditor from '$lib/components/AnimationEditor.svelte';
   import CreateAnimationDialog from '$lib/components/CreateAnimationDialog.svelte';
   import PackAtlasDialog from '$lib/components/PackAtlasDialog.svelte';
@@ -39,6 +40,7 @@
   let showInpaintDialog = $state(false);
   let showOutpaintDialog = $state(false);
   let showGenerateMaterialDialog = $state(false);
+  let showGenerateVideoDialog = $state(false);
   let showCreateAnimationDialog = $state(false);
   let showPackAtlasDialog = $state(false);
   let showSeamlessTextureDialog = $state(false);
@@ -200,6 +202,28 @@
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
         </svg>
         Generate Image
+      </button>
+      <button
+        onclick={() => (showGenerateVideoDialog = true)}
+        class="flex items-center gap-2 px-4 py-2 bg-[var(--color-accent)] hover:bg-[var(--color-accent)]/80 rounded-lg transition-colors font-medium"
+        disabled={!$selectedProject || imageAssets.length === 0}
+        title={!$selectedProject ? 'Select a project first' : imageAssets.length === 0 ? 'No Image/Sprite assets available' : ''}
+      >
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+        </svg>
+        Generate Video
+      </button>
+      <button
+        onclick={() => (showGenerateAudioDialog = true)}
+        class="flex items-center gap-2 px-4 py-2 bg-[var(--color-surface)] hover:bg-[var(--color-surface)]/80 rounded-lg transition-colors font-medium"
+        disabled={!$selectedProject}
+        title={$selectedProject ? '' : 'Select a project first'}
+      >
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
+        </svg>
+        Generate Audio
       </button>
       <button
         onclick={() => (showGenerateAudioDialog = true)}
@@ -593,6 +617,18 @@
     onclose={() => {
       showGenerateMaterialDialog = false;
       selectedAssetIdForAction = null;
+    }}
+  />
+{/if}
+
+<!-- Generate Video Dialog -->
+{#if showGenerateVideoDialog && $selectedProject}
+  <GenerateVideoDialog
+    open={showGenerateVideoDialog}
+    projectId={$selectedProject.id}
+    availableAssets={imageAssets}
+    onclose={() => {
+      showGenerateVideoDialog = false;
     }}
   />
 {/if}

@@ -18,6 +18,7 @@ pub mod projects;
 pub mod remove_background;
 pub mod slice_sprite_sheet;
 pub mod texture;
+pub mod video_gen;
 
 pub use animations::{create_animation, delete_animation, export_animation, get_animation, list_animations, update_animation};
 pub use atlas::pack_atlas;
@@ -40,3 +41,4 @@ pub use projects::{
 pub use remove_background::remove_background;
 pub use slice_sprite_sheet::slice_sprite_sheet;
 pub use texture::generate_seamless_texture;
+pub use video_gen::generate_video;
