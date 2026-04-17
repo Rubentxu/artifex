@@ -231,6 +231,7 @@ pub async fn create_model_profile(
 
 /// Updates an existing model profile.
 #[tauri::command]
+#[allow(clippy::too_many_arguments)]
 pub async fn update_model_profile(
     state: State<'_, crate::AppState>,
     id: String,

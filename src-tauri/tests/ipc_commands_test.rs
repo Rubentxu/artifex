@@ -21,8 +21,9 @@ async fn test_create_project_empty_name_validation() {
     let _pool = setup_test_db().await.expect("Failed to setup test DB");
 
     // Validate empty name is rejected
-    let empty_name = "";
+    let empty_name = String::new();
     assert!(empty_name.is_empty(), "Empty name should be rejected by validation");
+    let _ = empty_name; // suppress unused variable warning
 }
 
 /// Test that create_project command validates name length

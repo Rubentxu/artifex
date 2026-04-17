@@ -6,10 +6,11 @@ use serde_json::Value as JsonValue;
 use artifex_shared_kernel::{JobId, ProjectId, Timestamp};
 
 /// Job status enumeration.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
 #[serde(rename_all = "lowercase")]
 pub enum JobStatus {
     /// Job is waiting to be processed.
+    #[default]
     Pending,
     /// Job is currently being processed.
     Running,
@@ -19,12 +20,6 @@ pub enum JobStatus {
     Failed,
     /// Job was cancelled.
     Cancelled,
-}
-
-impl Default for JobStatus {
-    fn default() -> Self {
-        Self::Pending
-    }
 }
 
 /// A job in the queue.

@@ -288,7 +288,7 @@ mod tests {
         }
 
         async fn find_rule(&self, operation_type: &str) -> Result<Option<RoutingRule>, String> {
-            Ok(self.rules.iter().find(|r| &r.operation_type == operation_type).cloned())
+            Ok(self.rules.iter().find(|r| r.operation_type == operation_type).cloned())
         }
     }
 

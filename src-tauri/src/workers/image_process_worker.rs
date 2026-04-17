@@ -121,9 +121,9 @@ fn nearest_palette_color(r: u8, g: u8, b: u8, palette: &[(u8, u8, u8)]) -> (u8, 
     let mut best_dist = u32::MAX;
 
     for (i, &color) in palette.iter().enumerate() {
-        let dr = (r as i32 - color.0 as i32).abs() as u32;
-        let dg = (g as i32 - color.1 as i32).abs() as u32;
-        let db = (b as i32 - color.2 as i32).abs() as u32;
+        let dr = (r as i32 - color.0 as i32).unsigned_abs();
+        let dg = (g as i32 - color.1 as i32).unsigned_abs();
+        let db = (b as i32 - color.2 as i32).unsigned_abs();
         // Weighted Euclidean distance (human eye sensitivity)
         let dist = 2 * dr * dr + 4 * dg * dg + 3 * db * db;
         if dist < best_dist {

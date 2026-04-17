@@ -107,7 +107,7 @@ impl AudioGenWorker {
             .map_err(|e| AppError::validation(format!("Invalid audio generation params: {}", e)))?;
 
         // Validate params before calling provider
-        params.validate().map_err(|e| AppError::validation(e))?;
+        params.validate().map_err(AppError::validation)?;
 
         // Determine operation type based on kind
         let operation_type = Self::determine_audio_operation(&params.kind);
@@ -188,7 +188,7 @@ impl AudioGenWorker {
             .map_err(|e| AppError::validation(format!("Invalid TTS params: {}", e)))?;
 
         // Validate params before calling provider
-        params.validate().map_err(|e| AppError::validation(e))?;
+        params.validate().map_err(AppError::validation)?;
 
         // Resolve the model profile using the router (includes fallback chain)
         let resolved = router

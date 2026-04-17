@@ -7,19 +7,14 @@ use artifex_shared_kernel::{ProjectId, ProjectPath, Timestamp};
 use super::ProjectName;
 
 /// Project status enumeration.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
 #[serde(rename_all = "lowercase")]
 pub enum ProjectStatus {
     /// Project is active and in use.
+    #[default]
     Active,
     /// Project has been archived.
     Archived,
-}
-
-impl Default for ProjectStatus {
-    fn default() -> Self {
-        Self::Active
-    }
 }
 
 /// A project aggregate root.

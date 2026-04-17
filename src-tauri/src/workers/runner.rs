@@ -215,7 +215,7 @@ impl WorkerRunner {
 
         // Helper: emit progress event and persist to DB at each phase
         let emit_progress = |percent: u8, message: &'static str| {
-            let job_id = job.id.clone();
+            let job_id = job.id;
             let app_handle = app_handle.cloned();
             let job_repo = job_repo.clone();
             async move {
@@ -257,7 +257,7 @@ impl WorkerRunner {
                     let asset_kind = match job.job_type.as_str() {
                         "audio_generate" => "audio",
                         "tts_synthesize" => "voice",
-                        "image_generate" | "image_remove_background" | "pixel_art_convert" => "image",
+                        "image_generate" | "image_remove_background" | "pixel_art_convert" | "sprite_slice" => "image",
                         "tile_generate" => "tileset",
                         "sprite_generate" => "sprite",
                         _ => "unknown",
@@ -280,11 +280,7 @@ impl WorkerRunner {
 
                         // For sprite_generate: include manifest/aseprite paths in metadata
                         // For other job types: use standard metadata
-                        let metadata = if job.job_type == "sprite_generate" {
-                            Some(result.metadata.clone())
-                        } else {
-                            Some(result.metadata.clone())
-                        };
+                        let metadata = Some(result.metadata.clone());
                         let file_path = output_file.to_string_lossy().to_string();
 
                         let asset_service_clone = asset_service.clone();

@@ -75,9 +75,9 @@ impl AsRef<str> for ProjectName {
     }
 }
 
-impl Into<String> for ProjectName {
-    fn into(self) -> String {
-        self.0
+impl From<ProjectName> for String {
+    fn from(val: ProjectName) -> Self {
+        val.0
     }
 }
 
@@ -172,7 +172,7 @@ mod tests {
     #[test]
     fn test_deref() {
         let name = ProjectName::new("MyGame").unwrap();
-        let s: &str = &*name;
+        let s: &str = &name;
         assert_eq!(s, "MyGame");
     }
 

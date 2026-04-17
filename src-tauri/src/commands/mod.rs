@@ -9,6 +9,7 @@ pub mod image_gen;
 pub mod jobs;
 pub mod projects;
 pub mod remove_background;
+pub mod slice_sprite_sheet;
 
 pub use assets::{delete_asset, get_asset, import_asset, list_assets, register_asset};
 pub use audio_gen::{generate_audio, synthesize_speech};
@@ -22,3 +23,4 @@ pub use projects::{
     rename_project,
 };
 pub use remove_background::remove_background;
+pub use slice_sprite_sheet::slice_sprite_sheet;

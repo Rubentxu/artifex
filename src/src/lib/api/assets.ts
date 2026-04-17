@@ -1,6 +1,6 @@
 import type { StorageBackend } from './storage-backend';
 import { TauriBackend } from './tauri-backend';
-import type { AssetResponse, ImportAssetRequest, GenerateImageRequest, GenerateAudioRequest, GenerateTtsRequest, RemoveBackgroundRequest, ConvertPixelArtRequest, GenerateTileRequest, GenerateSpriteSheetRequest } from '$lib/types/asset';
+import type { AssetResponse, ImportAssetRequest, GenerateImageRequest, GenerateAudioRequest, GenerateTtsRequest, RemoveBackgroundRequest, ConvertPixelArtRequest, GenerateTileRequest, GenerateSpriteSheetRequest, SliceSpriteSheetRequest } from '$lib/types/asset';
 
 let backend: StorageBackend;
 export function setBackend(b: StorageBackend): void {
@@ -61,4 +61,9 @@ export async function generateTile(request: GenerateTileRequest): Promise<string
 export async function generateSpriteSheet(request: GenerateSpriteSheetRequest): Promise<string> {
   // Returns job_id
   return getBackend().invoke<string>('generate_sprite_sheet', { request });
+}
+
+export async function sliceSpriteSheet(request: SliceSpriteSheetRequest): Promise<string> {
+  // Returns job_id
+  return getBackend().invoke<string>('slice_sprite_sheet', { request });
 }

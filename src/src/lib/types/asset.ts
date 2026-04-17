@@ -111,3 +111,26 @@ export interface GenerateSpriteSheetRequest {
   animation_name?: string;
   output_format?: OutputFormat;
 }
+
+export type SliceMode = 'Grid' | 'AutoDetect';
+
+export type SortOrder = 'LeftToRight' | 'TopToBottom';
+
+export interface GridSliceParams {
+  rows?: number;
+  cols?: number;
+  margin?: number;
+}
+
+export interface AutoDetectSliceParams {
+  min_area?: number;
+  sort_order?: SortOrder;
+}
+
+export interface SliceSpriteSheetRequest {
+  asset_id: string;
+  project_id: string;
+  mode?: SliceMode;
+  grid_params?: GridSliceParams;
+  auto_detect_params?: AutoDetectSliceParams;
+}

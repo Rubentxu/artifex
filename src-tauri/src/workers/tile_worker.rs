@@ -268,7 +268,7 @@ mod tests {
         let score = calculate_seamlessness(&png_bytes, 4, 4).unwrap();
 
         // Score must be between 0.0 and 1.0 (inclusive)
-        assert!(score >= 0.0 && score <= 1.0, "seam_score {} should be between 0.0 and 1.0", score);
+        assert!((0.0..=1.0).contains(&score), "seam_score {} should be between 0.0 and 1.0", score);
     }
 
     #[test]

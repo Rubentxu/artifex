@@ -55,7 +55,7 @@ impl JobWorker for ImageGenWorker {
                 .map_err(|e| AppError::validation(format!("Invalid image generation params: {}", e)))?;
 
             // Validate params before calling provider
-            params.validate().map_err(|e| AppError::validation(e))?;
+            params.validate().map_err(AppError::validation)?;
 
             // Resolve the model profile using the router (includes fallback chain)
             let resolved = router

@@ -253,7 +253,7 @@ impl FalImageProvider {
                     // Fetch the actual result
                     let result_response = self
                         .http_client
-                        .get(&format!("https://queue.fal.run/requests/{}/results", request_id))
+                        .get(format!("https://queue.fal.run/requests/{}/results", request_id))
                         .header("Authorization", format!("Key {}", api_key))
                         .send()
                         .await

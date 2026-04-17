@@ -33,18 +33,13 @@ pub struct SpriteOperation {
 }
 
 /// Output format for sprite sheet manifests.
-#[derive(Debug, Clone, Copy, PartialEq, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Deserialize, Default)]
 #[serde(rename_all = "camelCase")]
 pub enum OutputFormat {
     Json,
     Aseprite,
+    #[default]
     Both,
-}
-
-impl Default for OutputFormat {
-    fn default() -> Self {
-        OutputFormat::Both
-    }
 }
 
 /// Worker for sprite sheet generation jobs.
@@ -205,8 +200,8 @@ impl JobWorker for SpriteWorker {
 
     fn process(&self, job: &Job) -> JobFuture {
         let assets_dir = self.assets_dir.clone();
-        let job_id = job.id.clone();
-        let project_id = job.project_id.clone();
+        let job_id = job.id;
+        let project_id = job.project_id;
         let operation = job.operation.clone();
 
         Box::pin(async move {
@@ -285,7 +280,7 @@ async fn extract_frames(
     let mut frames: Vec<PathBuf> = std::fs::read_dir(output_dir)
         .map_err(|e| AppError::io_error(format!("Failed to read temp frame directory: {}", e)))?
         .filter_map(|entry| entry.ok().map(|e| e.path()))
-        .filter(|p| p.extension().map_or(false, |ext| ext == "png"))
+        .filter(|p| p.extension().is_some_and(|ext| ext == "png"))
         .collect();
 
     frames.sort();
@@ -546,6 +541,7 @@ struct FrameEntry {
 }
 
 /// Writes the canonical JSON manifest to a file.
+#[allow(clippy::too_many_arguments)]
 fn write_canonical_manifest(
     frames: &[DynamicImage],
     rects: &[FrameRect],

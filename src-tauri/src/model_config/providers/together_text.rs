@@ -136,7 +136,7 @@ impl TextProvider for TogetherTextProvider {
             .to_string();
 
         let usage = completion.usage;
-        let truncated = completion.choices.first().map_or(false, |c| c.finish_reason == "length");
+        let truncated = completion.choices.first().is_some_and(|c| c.finish_reason == "length");
 
         Ok(TextResult::new(
             text,

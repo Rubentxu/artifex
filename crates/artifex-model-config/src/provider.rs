@@ -100,6 +100,7 @@ pub enum ProviderKind {
 
 impl ProviderKind {
     /// Returns the provider kind from a string name.
+    #[allow(clippy::should_implement_trait)]
     pub fn from_str(s: &str) -> Option<Self> {
         match s {
             "replicate" => Some(Self::Replicate),

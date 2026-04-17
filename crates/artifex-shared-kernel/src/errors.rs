@@ -91,7 +91,7 @@ pub fn is_unique_violation(err: &SqlxError) -> bool {
             // Also check message as fallback
             msg.contains("UNIQUE constraint failed")
                 || msg.contains("unique")
-                || db_err.code().map_or(false, |c| c == "2067")
+                || db_err.code().is_some_and(|c| c == "2067")
         }
         _ => false,
     }

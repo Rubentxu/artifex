@@ -3,6 +3,7 @@
 use sqlx::{sqlite::SqlitePoolOptions, SqlitePool};
 
 /// Creates a test database pool with migrations applied.
+#[allow(dead_code)]
 pub async fn setup_test_db() -> Result<SqlitePool, sqlx::Error> {
     // Use a temporary in-memory database for tests
     let pool = SqlitePoolOptions::new()

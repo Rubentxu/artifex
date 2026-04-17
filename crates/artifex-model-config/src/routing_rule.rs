@@ -52,6 +52,11 @@ impl RoutingRule {
         1 + self.fallback_profile_ids.len()
     }
 
+    /// Returns true if there are no profiles (always false since there's always a default).
+    pub fn is_empty(&self) -> bool {
+        false
+    }
+
     /// Returns true if there are no fallbacks configured.
     pub fn is_single(&self) -> bool {
         self.fallback_profile_ids.is_empty()

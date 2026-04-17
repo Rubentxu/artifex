@@ -7,6 +7,7 @@
   import GenerateAudioDialog from '$lib/components/GenerateAudioDialog.svelte';
   import GenerateTileDialog from '$lib/components/GenerateTileDialog.svelte';
   import GenerateSpriteSheetDialog from '$lib/components/GenerateSpriteSheetDialog.svelte';
+  import SliceSpriteSheetDialog from '$lib/components/SliceSpriteSheetDialog.svelte';
   import RemoveBackgroundDialog from '$lib/components/RemoveBackgroundDialog.svelte';
   import ConvertPixelArtDialog from '$lib/components/ConvertPixelArtDialog.svelte';
   import JobHistoryPanel from '$lib/components/JobHistoryPanel.svelte';
@@ -22,6 +23,7 @@
   let showGenerateAudioDialog = $state(false);
   let showGenerateTileDialog = $state(false);
   let showGenerateSpriteSheetDialog = $state(false);
+  let showSliceSpriteSheetDialog = $state(false);
   let showRemoveBackgroundDialog = $state(false);
   let showConvertPixelArtDialog = $state(false);
   let selectedAssetIdForAction = $state<string | null>(null);
@@ -32,6 +34,9 @@
 
   // Derived list of video assets for sprite sheet generation
   let videoAssets: AssetResponse[] = $derived($assetStore.assets.filter(a => a.kind === 'Video'));
+
+  // Derived list of image/sprite assets for sprite sheet slicing
+  let imageAssets: AssetResponse[] = $derived($assetStore.assets.filter(a => a.kind === 'Image' || a.kind === 'Sprite'));
 
   onMount(async () => {
     if ($selectedProject) {
@@ -115,6 +120,10 @@
   function handleGenerateSpriteSheet() {
     showGenerateSpriteSheetDialog = true;
   }
+
+  function handleSliceSpriteSheet() {
+    showSliceSpriteSheetDialog = true;
+  }
 </script>
 
 <div class="h-full flex flex-col overflow-hidden">
@@ -165,6 +174,17 @@
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>
         Generate Sprite Sheet
+      </button>
+      <button
+        onclick={handleSliceSpriteSheet}
+        class="flex items-center gap-2 px-4 py-2 bg-[var(--color-surface)] hover:bg-[var(--color-surface)]/80 rounded-lg transition-colors font-medium"
+        disabled={!$selectedProject || imageAssets.length === 0}
+        title={!$selectedProject ? 'Select a project first' : imageAssets.length === 0 ? 'No image assets available' : ''}
+      >
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" />
+        </svg>
+        Slice Sprite Sheet
       </button>
       <button
         onclick={handleImport}
@@ -346,6 +366,16 @@
     projectId={$selectedProject.id}
     videoAssets={videoAssets}
     onclose={() => (showGenerateSpriteSheetDialog = false)}
+  />
+{/if}
+
+<!-- Slice Sprite Sheet Dialog -->
+{#if showSliceSpriteSheetDialog && $selectedProject}
+  <SliceSpriteSheetDialog
+    open={showSliceSpriteSheetDialog}
+    projectId={$selectedProject.id}
+    imageAssets={imageAssets}
+    onclose={() => (showSliceSpriteSheetDialog = false)}
   />
 {/if}
 

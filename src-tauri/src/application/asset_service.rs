@@ -118,7 +118,7 @@ impl AssetApplicationService {
         // Build asset with file info (clone asset_kind for later comparison)
         let asset_kind_clone = asset_kind.clone();
         let mut asset = Asset::register(pid, name, asset_kind)
-            .map_err(|e| ArtifexError::validation(e))?;
+            .map_err(ArtifexError::validation)?;
         asset.file_path = Some(dest_path.to_string_lossy().to_string());
         asset.file_size = Some(file_size);
 
@@ -186,7 +186,7 @@ impl AssetApplicationService {
             .map_err(|e| ArtifexError::IoError(e.to_string()))?;
 
         let mut asset = Asset::register(pid, name, asset_kind.clone())
-            .map_err(|e| ArtifexError::validation(e))?;
+            .map_err(ArtifexError::validation)?;
         asset.file_path = Some(file_path.to_string());
         asset.file_size = Some(meta.len());
 

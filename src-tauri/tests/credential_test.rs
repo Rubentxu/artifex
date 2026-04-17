@@ -70,7 +70,7 @@ async fn test_credential_set_and_status() {
 
     // Register provider
     let registry = artifex_model_config::ProviderRegistry::new();
-    registry.register_image("testprovider", Arc::new(MockImageProvider::new()));
+    let _ = registry.register_image("testprovider", Arc::new(MockImageProvider::new()));
 
     let service = ModelConfigService::new(
         model_repo,
@@ -106,7 +106,7 @@ async fn test_credential_delete_and_status() {
 
     // Register provider
     let registry = artifex_model_config::ProviderRegistry::new();
-    registry.register_image("testprovider", Arc::new(MockImageProvider::new()));
+    let _ = registry.register_image("testprovider", Arc::new(MockImageProvider::new()));
 
     let service = ModelConfigService::new(
         model_repo,

@@ -8,7 +8,7 @@ mod test_helpers;
 use std::sync::Arc;
 
 use artifex_asset_management::{Project, ProjectRepository};
-use artifex_job_queue::{Job, JobRepository, JobStatus};
+use artifex_job_queue::{Job, JobStatus};
 use serde_json::json;
 
 use test_helpers::setup_test_db;
