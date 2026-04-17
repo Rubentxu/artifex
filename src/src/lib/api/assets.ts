@@ -1,6 +1,6 @@
 import type { StorageBackend } from './storage-backend';
 import { TauriBackend } from './tauri-backend';
-import type { AssetResponse, ImportAssetRequest, GenerateImageRequest, GenerateAudioRequest, GenerateTtsRequest, RemoveBackgroundRequest, ConvertPixelArtRequest, GenerateTileRequest, GenerateSpriteSheetRequest, SliceSpriteSheetRequest, GenerateCodeRequest, InpaintRequest, OutpaintRequest, GenerateMaterialRequest } from '$lib/types/asset';
+import type { AssetResponse, ImportAssetRequest, GenerateImageRequest, GenerateAudioRequest, GenerateTtsRequest, RemoveBackgroundRequest, ConvertPixelArtRequest, GenerateTileRequest, GenerateSpriteSheetRequest, SliceSpriteSheetRequest, GenerateCodeRequest, InpaintRequest, OutpaintRequest, GenerateMaterialRequest, AnimationResponse, CreateAnimationRequest, UpdateAnimationRequest, ExportAnimationRequest } from '$lib/types/asset';
 
 let backend: StorageBackend;
 export function setBackend(b: StorageBackend): void {
@@ -90,4 +90,33 @@ export async function outpaintImage(request: OutpaintRequest): Promise<string> {
 export async function generateMaterial(request: GenerateMaterialRequest): Promise<string> {
   // Returns job_id
   return getBackend().invoke<string>('generate_material', { request });
+}
+
+// Animation API functions
+
+export async function createAnimation(request: CreateAnimationRequest): Promise<string> {
+  // Returns asset_id
+  return getBackend().invoke<string>('create_animation', { request });
+}
+
+export async function getAnimation(id: string): Promise<AnimationResponse> {
+  return getBackend().invoke<AnimationResponse>('get_animation', { id });
+}
+
+export async function listAnimations(projectId: string): Promise<AnimationResponse[]> {
+  return getBackend().invoke<AnimationResponse[]>('list_animations', { projectId });
+}
+
+export async function updateAnimation(request: UpdateAnimationRequest): Promise<string> {
+  // Returns asset_id
+  return getBackend().invoke<string>('update_animation', { request });
+}
+
+export async function deleteAnimation(id: string): Promise<void> {
+  return getBackend().invoke<void>('delete_animation', { id });
+}
+
+export async function exportAnimation(request: ExportAnimationRequest): Promise<string> {
+  // Returns job_id
+  return getBackend().invoke<string>('export_animation', { request });
 }

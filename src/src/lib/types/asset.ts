@@ -1,6 +1,6 @@
 // Asset types matching Rust DTOs (camelCase for JSON)
 
-export type AssetKind = 'Image' | 'Sprite' | 'Tileset' | 'Material' | 'Audio' | 'Voice' | 'Video' | 'Code' | 'Other';
+export type AssetKind = 'Image' | 'Sprite' | 'Tileset' | 'Material' | 'Audio' | 'Voice' | 'Video' | 'Code' | 'Animation' | 'Other';
 
 export type CodeEngine = 'godot' | 'unity';
 
@@ -196,4 +196,45 @@ export interface GenerateMaterialRequest {
   asset_id: string;
   provider_id?: string;
   model_id?: string;
+}
+
+// Animation types
+
+export interface AnimationMetadata {
+  name: string;
+  frame_asset_ids: string[];
+  frame_durations_ms: number[];
+  loop_animation: boolean;
+  total_duration_ms: number;
+  default_fps?: number;
+}
+
+export interface AnimationResponse {
+  id: string;
+  project_id: string;
+  name: string;
+  kind: 'animation';
+  metadata: AnimationMetadata | null;
+  created_at: string;
+}
+
+export interface CreateAnimationRequest {
+  project_id: string;
+  name: string;
+  frame_asset_ids: string[];
+  default_fps?: number;
+}
+
+export interface UpdateAnimationRequest {
+  id: string;
+  name?: string;
+  frame_asset_ids?: string[];
+  frame_durations_ms?: number[];
+  loop_animation?: boolean;
+}
+
+export interface ExportAnimationRequest {
+  animation_id: string;
+  project_id: string;
+  format?: 'spritesheet_json';
 }

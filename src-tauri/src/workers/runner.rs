@@ -262,6 +262,7 @@ impl WorkerRunner {
                         "sprite_generate" => "sprite",
                         "material_generate" => "material",
                         "code_generate" => "code",
+                        "animation_export" => "animation",
                         _ => "unknown",
                     };
 

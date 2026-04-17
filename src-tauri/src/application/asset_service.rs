@@ -44,6 +44,32 @@ impl AssetApplicationService {
         self.repo.delete(&asset_id).await
     }
 
+    /// Creates a new asset directly (used for internal asset creation like animations).
+    ///
+    /// The caller is responsible for populating all required fields on the asset.
+    pub async fn create_asset(&self, asset: Asset) -> Result<AssetId, ArtifexError> {
+        let created = self.repo.create(&asset).await?;
+        Ok(created.id)
+    }
+
+    /// Updates an existing asset.
+    ///
+    /// Note: This performs a simple replace of metadata. For complex updates,
+    /// the full asset with updated fields should be passed.
+    pub async fn update_asset(&self, asset: Asset) -> Result<Asset, ArtifexError> {
+        // Get the existing asset to verify it exists
+        let existing = self.repo.find_by_id(&asset.id).await?;
+        if existing.is_none() {
+            return Err(ArtifexError::not_found("Asset", &asset.id.into_uuid().to_string()));
+        }
+
+        // Delete and recreate with updated fields (simple upsert approach)
+        // A more sophisticated implementation would have a direct update method
+        self.repo.delete(&asset.id).await?;
+        let updated = self.repo.create(&asset).await?;
+        Ok(updated)
+    }
+
     /// Imports a file into the project's asset directory and registers it as an asset.
     ///
     /// The file is copied to `<project_path>/artifex-assets/<kind>/<name>`.

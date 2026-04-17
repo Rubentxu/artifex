@@ -14,6 +14,8 @@
   import InpaintDialog from '$lib/components/InpaintDialog.svelte';
   import OutpaintDialog from '$lib/components/OutpaintDialog.svelte';
   import GenerateMaterialDialog from '$lib/components/GenerateMaterialDialog.svelte';
+  import AnimationEditor from '$lib/components/AnimationEditor.svelte';
+  import CreateAnimationDialog from '$lib/components/CreateAnimationDialog.svelte';
   import JobHistoryPanel from '$lib/components/JobHistoryPanel.svelte';
   import { open } from '@tauri-apps/plugin-dialog';
   import { convertFileSrc } from '@tauri-apps/api/core';
@@ -35,11 +37,12 @@
   let showInpaintDialog = $state(false);
   let showOutpaintDialog = $state(false);
   let showGenerateMaterialDialog = $state(false);
+  let showCreateAnimationDialog = $state(false);
   let selectedAssetIdForAction = $state<string | null>(null);
   let importError = $state<string | null>(null);
   let unlistenJobCompleted: (() => void) | null = null;
 
-  const filterKinds: (AssetKind | 'All')[] = ['All', 'Image', 'Sprite', 'Tileset', 'Material', 'Audio', 'Voice', 'Video', 'Code', 'Other'];
+  const filterKinds: (AssetKind | 'All')[] = ['All', 'Image', 'Sprite', 'Tileset', 'Material', 'Audio', 'Voice', 'Video', 'Animation', 'Code', 'Other'];
 
   // Derived list of video assets for sprite sheet generation
   let videoAssets: AssetResponse[] = $derived($assetStore.assets.filter(a => a.kind === 'Video'));
@@ -50,6 +53,11 @@
   // Derived selected image asset for inpaint/outpaint
   let selectedImageAsset = $derived($assetStore.selectedId
     ? $assetStore.assets.find(a => a.id === $assetStore.selectedId && (a.kind === 'Image' || a.kind === 'Sprite' || a.kind === 'Tileset' || a.kind === 'Material'))
+    : null);
+
+  // Derived selected animation asset for editing
+  let selectedAnimationAsset = $derived($assetStore.selectedId
+    ? $assetStore.assets.find(a => a.id === $assetStore.selectedId && a.kind === 'Animation')
     : null);
 
   // Get image URL for selected asset
@@ -219,6 +227,17 @@
         Slice Sprite Sheet
       </button>
       <button
+        onclick={() => (showCreateAnimationDialog = true)}
+        class="flex items-center gap-2 px-4 py-2 bg-[var(--color-surface)] hover:bg-[var(--color-surface)]/80 rounded-lg transition-colors font-medium"
+        disabled={!$selectedProject || imageAssets.length === 0}
+        title={!$selectedProject ? 'Select a project first' : imageAssets.length === 0 ? 'No image assets available' : ''}
+      >
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        Create Animation
+      </button>
+      <button
         onclick={() => (showGenerateCodeDialog = true)}
         class="flex items-center gap-2 px-4 py-2 bg-[var(--color-surface)] hover:bg-[var(--color-surface)]/80 rounded-lg transition-colors font-medium"
         disabled={!$selectedProject}
@@ -337,6 +356,14 @@
         <h2 class="text-xl font-semibold mb-2">No project selected</h2>
         <p class="text-[var(--color-text-muted)]">Select a project to view its assets</p>
       </div>
+    {:else if selectedAnimationAsset}
+      <!-- Show Animation Editor when an animation is selected -->
+      <AnimationEditor
+        animation={selectedAnimationAsset}
+        projectId={$selectedProject.id}
+        allAssets={$assetStore.assets}
+        onclose={() => assetStore.selectAsset(null)}
+      />
     {:else if $filteredAssets.length > 0}
       <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
         {#each $filteredAssets as asset (asset.id)}
@@ -527,6 +554,18 @@
     onclose={() => {
       showGenerateMaterialDialog = false;
       selectedAssetIdForAction = null;
+    }}
+  />
+{/if}
+
+<!-- Create Animation Dialog -->
+{#if showCreateAnimationDialog && $selectedProject}
+  <CreateAnimationDialog
+    open={showCreateAnimationDialog}
+    projectId={$selectedProject.id}
+    availableFrames={imageAssets}
+    onclose={() => {
+      showCreateAnimationDialog = false;
     }}
   />
 {/if}

@@ -1,5 +1,5 @@
 import { writable, derived } from 'svelte/store';
-import type { AssetResponse, AssetKind, GenerateImageRequest, GenerateAudioRequest, GenerateTtsRequest, RemoveBackgroundRequest, ConvertPixelArtRequest, GenerateTileRequest, GenerateSpriteSheetRequest, SliceSpriteSheetRequest, GenerateCodeRequest, InpaintRequest, OutpaintRequest, GenerateMaterialRequest } from '$lib/types/asset';
+import type { AssetResponse, AssetKind, GenerateImageRequest, GenerateAudioRequest, GenerateTtsRequest, RemoveBackgroundRequest, ConvertPixelArtRequest, GenerateTileRequest, GenerateSpriteSheetRequest, SliceSpriteSheetRequest, GenerateCodeRequest, InpaintRequest, OutpaintRequest, GenerateMaterialRequest, CreateAnimationRequest, UpdateAnimationRequest, AnimationResponse } from '$lib/types/asset';
 import * as assetApi from '$lib/api/assets';
 
 interface AssetState {
@@ -112,6 +112,37 @@ function createAssetStore() {
 
     async generateMaterial(request: GenerateMaterialRequest) {
       const jobId = await assetApi.generateMaterial(request);
+      return jobId;
+    },
+
+    async createAnimation(request: CreateAnimationRequest) {
+      const assetId = await assetApi.createAnimation(request);
+      // Refresh asset list after creating animation
+      const projectId = request.project_id;
+      const assets = await assetApi.listAssets(projectId);
+      update(s => ({ ...s, assets }));
+      return assetId;
+    },
+
+    async updateAnimation(request: UpdateAnimationRequest) {
+      await assetApi.updateAnimation(request);
+      // Refresh asset list after updating animation
+      const assets = await assetApi.listAssets(request.id.split('-')[0]); // rough project id extraction
+      update(s => ({ ...s, assets }));
+      return request.id;
+    },
+
+    async deleteAnimation(id: string) {
+      await assetApi.deleteAnimation(id);
+      update(s => ({
+        ...s,
+        assets: s.assets.filter(a => a.id !== id),
+        selectedId: s.selectedId === id ? null : s.selectedId,
+      }));
+    },
+
+    async exportAnimation(request: { animation_id: string; project_id: string }) {
+      const jobId = await assetApi.exportAnimation(request);
       return jobId;
     },
   };

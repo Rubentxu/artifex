@@ -17,10 +17,13 @@ use tauri::Manager;
 
 use application::{AssetApplicationService, JobApplicationService, ProjectApplicationService};
 use commands::{
-    archive_project, cancel_job, convert_pixel_art, create_job, create_project, delete_asset,
-    delete_project, generate_audio, generate_code, generate_image, generate_material, generate_sprite_sheet, generate_tile, get_asset, get_job, get_project,
-    import_asset, inpaint_image, list_assets, list_code_templates, list_jobs, list_projects, open_project, outpaint_image, register_asset,
-    remove_background, rename_project, slice_sprite_sheet, synthesize_speech,
+    archive_project, cancel_job, convert_pixel_art, create_animation, create_job, create_project,
+    delete_animation, delete_asset, delete_project, export_animation, generate_audio,
+    generate_code, generate_image, generate_material, generate_sprite_sheet, generate_tile,
+    get_animation, get_asset, get_job, get_project, import_asset, inpaint_image, list_animations,
+    list_assets, list_code_templates, list_jobs, list_projects, open_project, outpaint_image,
+    register_asset, remove_background, rename_project, slice_sprite_sheet, synthesize_speech,
+    update_animation,
 };
 use model_config::{
     list_model_profiles, create_model_profile, update_model_profile, delete_model_profile,
@@ -34,7 +37,7 @@ use artifex_model_config::credential_store::CredentialStore;
 use artifex_model_config::ModelRouter;
 use repositories::{SqliteAssetRepository, SqliteJobRepository, SqliteProjectRepository};
 use state::AppState;
-use workers::{AudioGenWorker, CodeWorker, ImageGenWorker, ImageProcessWorker, MaterialWorker, SliceWorker, SpriteWorker, TileWorker, WorkerRunner};
+use workers::{AnimationExportWorker, AudioGenWorker, CodeWorker, ImageGenWorker, ImageProcessWorker, MaterialWorker, SliceWorker, SpriteWorker, TileWorker, WorkerRunner};
 
 /// Attempts to create a keychain credential store.
 ///
@@ -158,8 +161,9 @@ pub fn run_app() {
                 credential_store.clone(),
                 assets_dir.clone(),
             ));
+            let animation_export_worker = Arc::new(AnimationExportWorker::new(assets_dir.clone()));
             let worker_runner = WorkerRunner::with_app_handle(
-                vec![image_worker, image_process_worker, tile_worker, audio_worker, sprite_worker, slice_worker, code_worker, material_worker],
+                vec![image_worker, image_process_worker, tile_worker, audio_worker, sprite_worker, slice_worker, code_worker, material_worker, animation_export_worker],
                 job_repo.clone(),
                 asset_service.clone(),
                 app.handle().clone(),
@@ -213,6 +217,13 @@ pub fn run_app() {
             delete_asset,
             import_asset,
             register_asset,
+            // Animation commands
+            create_animation,
+            list_animations,
+            get_animation,
+            update_animation,
+            delete_animation,
+            export_animation,
             remove_background,
             inpaint_image,
             outpaint_image,

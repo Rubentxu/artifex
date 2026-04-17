@@ -24,6 +24,8 @@ pub enum AssetKind {
     Video,
     /// A code/script file.
     Code,
+    /// An animation clip assembled from ordered frame assets.
+    Animation,
     /// Some other type of asset.
     Other,
 }
@@ -40,6 +42,7 @@ impl AssetKind {
             AssetKind::Voice => "voice",
             AssetKind::Video => "video",
             AssetKind::Code => "code",
+            AssetKind::Animation => "animation",
             AssetKind::Other => "other",
         }
     }
@@ -56,9 +59,96 @@ impl AssetKind {
             "voice" => Some(AssetKind::Voice),
             "video" => Some(AssetKind::Video),
             "code" => Some(AssetKind::Code),
+            "animation" => Some(AssetKind::Animation),
             "other" => Some(AssetKind::Other),
             _ => None,
         }
+    }
+}
+
+/// Metadata for Animation assets.
+///
+/// This struct is serialized to JSON and stored in the `Asset.metadata` field
+/// when the asset kind is `AssetKind::Animation`.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AnimationMetadata {
+    /// Animation display name.
+    pub name: String,
+    /// Ordered list of asset IDs that constitute the animation frames.
+    pub frame_asset_ids: Vec<String>,
+    /// Duration of each frame in milliseconds.
+    /// Must have the same length as `frame_asset_ids`.
+    pub frame_durations_ms: Vec<u32>,
+    /// Whether the animation should loop.
+    #[serde(default)]
+    pub loop_animation: bool,
+    /// Total duration of the animation in milliseconds (computed).
+    pub total_duration_ms: u32,
+    /// Default FPS used when this animation was created from a fixed-FPS source.
+    /// None if durations were set manually.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub default_fps: Option<u16>,
+}
+
+impl AnimationMetadata {
+    /// Creates a new AnimationMetadata with computed total_duration_ms.
+    ///
+    /// # Errors
+    /// Returns an error if `frame_asset_ids` is empty or if the lengths of
+    /// `frame_asset_ids` and `frame_durations_ms` don't match.
+    pub fn new(
+        name: String,
+        frame_asset_ids: Vec<String>,
+        frame_durations_ms: Vec<u32>,
+        loop_animation: bool,
+        default_fps: Option<u16>,
+    ) -> Result<Self, &'static str> {
+        if frame_asset_ids.is_empty() {
+            return Err("Animation must have at least one frame");
+        }
+        if frame_asset_ids.len() != frame_durations_ms.len() {
+            return Err("frame_asset_ids and frame_durations_ms must have the same length");
+        }
+        if frame_durations_ms.iter().any(|&d| d == 0) {
+            return Err("All frame durations must be positive");
+        }
+
+        let total_duration_ms = frame_durations_ms.iter().sum();
+
+        Ok(Self {
+            name,
+            frame_asset_ids,
+            frame_durations_ms,
+            loop_animation,
+            total_duration_ms,
+            default_fps,
+        })
+    }
+
+    /// Creates AnimationMetadata with uniform frame durations computed from FPS.
+    pub fn with_uniform_fps(
+        name: String,
+        frame_asset_ids: Vec<String>,
+        fps: u16,
+        loop_animation: bool,
+    ) -> Result<Self, &'static str> {
+        if frame_asset_ids.is_empty() {
+            return Err("Animation must have at least one frame");
+        }
+
+        let frame_duration_ms = if fps > 0 { 1000 / fps as u32 } else { 100 };
+        let frame_durations_ms = vec![frame_duration_ms; frame_asset_ids.len()];
+        let total_duration_ms = frame_duration_ms * frame_asset_ids.len() as u32;
+
+        Ok(Self {
+            name,
+            frame_asset_ids,
+            frame_durations_ms,
+            loop_animation,
+            total_duration_ms,
+            default_fps: Some(fps),
+        })
     }
 }
 
@@ -206,6 +296,7 @@ mod tests {
         assert_eq!(AssetKind::Voice.as_str(), "voice");
         assert_eq!(AssetKind::Video.as_str(), "video");
         assert_eq!(AssetKind::Code.as_str(), "code");
+        assert_eq!(AssetKind::Animation.as_str(), "animation");
         assert_eq!(AssetKind::Other.as_str(), "other");
     }
 
@@ -219,8 +310,19 @@ mod tests {
         assert_eq!(AssetKind::from_str("voice"), Some(AssetKind::Voice));
         assert_eq!(AssetKind::from_str("video"), Some(AssetKind::Video));
         assert_eq!(AssetKind::from_str("code"), Some(AssetKind::Code));
+        assert_eq!(AssetKind::from_str("animation"), Some(AssetKind::Animation));
         assert_eq!(AssetKind::from_str("other"), Some(AssetKind::Other));
         assert_eq!(AssetKind::from_str("unknown"), None);
+    }
+
+    #[test]
+    fn test_asset_kind_animation_round_trip() {
+        // SC-1a: Animation kind round-trips
+        let kind = AssetKind::Animation;
+        let serialized = kind.as_str();
+        assert_eq!(serialized, "animation");
+        let deserialized = AssetKind::from_str(serialized);
+        assert_eq!(deserialized, Some(AssetKind::Animation));
     }
 
     #[test]
@@ -294,5 +396,154 @@ mod tests {
         assert_eq!(asset.kind, deserialized.kind);
         assert_eq!(asset.width, deserialized.width);
         assert_eq!(asset.height, deserialized.height);
+    }
+
+    // =========================================================================
+    // AnimationMetadata tests
+    // =========================================================================
+
+    #[test]
+    fn test_animation_metadata_creation() {
+        let meta = AnimationMetadata::new(
+            "walk_cycle".to_string(),
+            vec![
+                "frame1".to_string(),
+                "frame2".to_string(),
+                "frame3".to_string(),
+            ],
+            vec![100, 200, 150],
+            true,
+            Some(10),
+        )
+        .unwrap();
+
+        assert_eq!(meta.name, "walk_cycle");
+        assert_eq!(meta.frame_asset_ids.len(), 3);
+        assert_eq!(meta.frame_durations_ms, vec![100, 200, 150]);
+        assert!(meta.loop_animation);
+        assert_eq!(meta.total_duration_ms, 450); // SC-2a: total is sum
+        assert_eq!(meta.default_fps, Some(10));
+    }
+
+    #[test]
+    fn test_animation_metadata_total_duration() {
+        // SC-2a: Model stores derived total duration
+        let meta = AnimationMetadata::new(
+            "test".to_string(),
+            vec!["a".to_string(), "b".to_string(), "c".to_string()],
+            vec![100, 200, 150],
+            false,
+            None,
+        )
+        .unwrap();
+
+        assert_eq!(meta.total_duration_ms, 450);
+    }
+
+    #[test]
+    fn test_animation_metadata_empty_frames_error() {
+        // SC-6: Error — empty frame list
+        let result = AnimationMetadata::new("test".to_string(), vec![], vec![], false, None);
+        assert!(result.is_err());
+        assert_eq!(
+            result.unwrap_err(),
+            "Animation must have at least one frame"
+        );
+    }
+
+    #[test]
+    fn test_animation_metadata_mismatched_lengths_error() {
+        let result = AnimationMetadata::new(
+            "test".to_string(),
+            vec!["a".to_string(), "b".to_string()],
+            vec![100], // Only one duration for two frames
+            false,
+            None,
+        );
+        assert!(result.is_err());
+        assert_eq!(
+            result.unwrap_err(),
+            "frame_asset_ids and frame_durations_ms must have the same length"
+        );
+    }
+
+    #[test]
+    fn test_animation_metadata_zero_duration_error() {
+        let result = AnimationMetadata::new(
+            "test".to_string(),
+            vec!["a".to_string(), "b".to_string()],
+            vec![100, 0], // Zero duration is invalid
+            false,
+            None,
+        );
+        assert!(result.is_err());
+        assert_eq!(result.unwrap_err(), "All frame durations must be positive");
+    }
+
+    #[test]
+    fn test_animation_metadata_with_uniform_fps() {
+        // SC-1: Create animation from sliced frames at 12 fps = 83ms each
+        let meta = AnimationMetadata::with_uniform_fps(
+            "idle".to_string(),
+            vec![
+                "frame0".to_string(),
+                "frame1".to_string(),
+                "frame2".to_string(),
+                "frame3".to_string(),
+            ],
+            12,
+            true,
+        )
+        .unwrap();
+
+        assert_eq!(meta.name, "idle");
+        assert_eq!(meta.frame_asset_ids.len(), 4);
+        assert_eq!(meta.frame_durations_ms, vec![83, 83, 83, 83]); // 1000/12 ≈ 83
+        assert!(meta.loop_animation);
+        assert_eq!(meta.default_fps, Some(12));
+    }
+
+    #[test]
+    fn test_animation_metadata_serde_roundtrip() {
+        let meta = AnimationMetadata::new(
+            "run".to_string(),
+            vec!["frame1".to_string(), "frame2".to_string()],
+            vec![50, 50],
+            true,
+            Some(20),
+        )
+        .unwrap();
+
+        let json = serde_json::to_string(&meta).unwrap();
+        let deserialized: AnimationMetadata = serde_json::from_str(&json).unwrap();
+
+        assert_eq!(meta.name, deserialized.name);
+        assert_eq!(meta.frame_asset_ids, deserialized.frame_asset_ids);
+        assert_eq!(meta.frame_durations_ms, deserialized.frame_durations_ms);
+        assert_eq!(meta.loop_animation, deserialized.loop_animation);
+        assert_eq!(meta.total_duration_ms, deserialized.total_duration_ms);
+        assert_eq!(meta.default_fps, deserialized.default_fps);
+    }
+
+    #[test]
+    fn test_animation_metadata_json_format() {
+        let meta = AnimationMetadata::new(
+            "test".to_string(),
+            vec!["id1".to_string(), "id2".to_string()],
+            vec![100, 200],
+            true,
+            None,
+        )
+        .unwrap();
+
+        let json = serde_json::to_string(&meta).unwrap();
+        // Verify camelCase field names
+        assert!(json.contains("\"name\":"));
+        assert!(json.contains("\"frameAssetIds\":"));
+        assert!(json.contains("\"frameDurationsMs\":"));
+        assert!(json.contains("\"loopAnimation\":"));
+        assert!(json.contains("\"totalDurationMs\":"));
+        assert!(!json.contains("\"loop_animation\":")); // Should be serialized as camelCase
+        assert!(!json.contains("\"defaultFps\":")); // Should be skipped when None
     }
 }
