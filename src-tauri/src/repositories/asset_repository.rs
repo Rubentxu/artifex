@@ -22,6 +22,10 @@ struct AssetRow {
     height: Option<i32>,
     created_at: String,
     updated_at: String,
+    // New columns (dual-write)
+    tags: Option<String>,
+    import_source: Option<String>,
+    collection_id: Option<String>,
 }
 
 /// SQLite-backed asset repository.
@@ -46,8 +50,9 @@ impl AssetRepository for SqliteAssetRepository {
 
         let now = Timestamp::now();
         let result = sqlx::query(
-            r#"INSERT INTO assets (id, project_id, name, kind, file_path, metadata, file_size, width, height, created_at, updated_at)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"#,
+            r#"INSERT INTO assets (id, project_id, name, kind, file_path, metadata, file_size, width, height, created_at, updated_at,
+                                     tags, import_source, collection_id)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"#,
         )
         .bind(asset.id.into_uuid().to_string())
         .bind(asset.project_id.into_uuid().to_string())
@@ -60,6 +65,10 @@ impl AssetRepository for SqliteAssetRepository {
         .bind(asset.height.map(|h| h as i32))
         .bind(asset.created_at.to_string())
         .bind(now.to_string())
+        // Dual-write new columns
+        .bind("[]") // tags - default empty array
+        .bind("uploaded") // import_source - default
+        .bind(Option::<String>::None) // collection_id - null initially
         .execute(&self.pool)
         .await;
 
@@ -77,7 +86,8 @@ impl AssetRepository for SqliteAssetRepository {
 
     async fn find_by_id(&self, id: &AssetId) -> Result<Option<Asset>, ArtifexError> {
         let row: Option<AssetRow> = sqlx::query_as(
-            r#"SELECT id, project_id, name, kind, file_path, metadata, file_size, width, height, created_at, updated_at
+            r#"SELECT id, project_id, name, kind, file_path, metadata, file_size, width, height, created_at, updated_at,
+                      tags, import_source, collection_id
                FROM assets WHERE id = ?"#,
         )
         .bind(id.into_uuid().to_string())
@@ -90,7 +100,8 @@ impl AssetRepository for SqliteAssetRepository {
 
     async fn find_by_project(&self, project_id: &ProjectId) -> Result<Vec<Asset>, ArtifexError> {
         let rows: Vec<AssetRow> = sqlx::query_as(
-            r#"SELECT id, project_id, name, kind, file_path, metadata, file_size, width, height, created_at, updated_at
+            r#"SELECT id, project_id, name, kind, file_path, metadata, file_size, width, height, created_at, updated_at,
+                      tags, import_source, collection_id
                FROM assets WHERE project_id = ? ORDER BY created_at DESC"#,
         )
         .bind(project_id.into_uuid().to_string())
@@ -111,7 +122,8 @@ impl AssetRepository for SqliteAssetRepository {
         kind: &AssetKind,
     ) -> Result<Vec<Asset>, ArtifexError> {
         let rows: Vec<AssetRow> = sqlx::query_as(
-            r#"SELECT id, project_id, name, kind, file_path, metadata, file_size, width, height, created_at, updated_at
+            r#"SELECT id, project_id, name, kind, file_path, metadata, file_size, width, height, created_at, updated_at,
+                      tags, import_source, collection_id
                FROM assets WHERE project_id = ? AND kind = ? ORDER BY created_at DESC"#,
         )
         .bind(project_id.into_uuid().to_string())
@@ -203,6 +215,9 @@ mod tests {
             height: Some(1024),
             created_at: "2024-01-01T00:00:00Z".to_string(),
             updated_at: "2024-01-01T00:00:00Z".to_string(),
+            tags: Some("[]".to_string()),
+            import_source: Some("uploaded".to_string()),
+            collection_id: None,
         };
 
         let asset = row_to_asset(&row).unwrap();
@@ -228,6 +243,9 @@ mod tests {
             height: None,
             created_at: "2024-01-01T00:00:00Z".to_string(),
             updated_at: "2024-01-01T00:00:00Z".to_string(),
+            tags: Some("[]".to_string()),
+            import_source: Some("uploaded".to_string()),
+            collection_id: None,
         };
 
         let asset = row_to_asset(&row).unwrap();
@@ -252,6 +270,9 @@ mod tests {
             height: None,
             created_at: "2024-01-01T00:00:00Z".to_string(),
             updated_at: "2024-01-01T00:00:00Z".to_string(),
+            tags: Some("[]".to_string()),
+            import_source: Some("uploaded".to_string()),
+            collection_id: None,
         };
 
         let result = row_to_asset(&row);

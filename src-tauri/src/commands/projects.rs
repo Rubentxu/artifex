@@ -14,7 +14,7 @@ pub async fn open_project(
     id: String,
 ) -> Result<ProjectResponse, String> {
     let project = state
-        .service
+        .project_service
         .open_project(&id)
         .await
         .map_err(|e| e.to_string())?;
@@ -30,7 +30,7 @@ pub async fn list_projects(
     state: State<'_, AppState>,
 ) -> Result<Vec<ProjectResponse>, String> {
     let projects = state
-        .service
+        .project_service
         .list_projects()
         .await
         .map_err(|e| e.to_string())?;
@@ -45,7 +45,7 @@ pub async fn create_project(
     request: CreateProjectRequest,
 ) -> Result<ProjectResponse, String> {
     let project = state
-        .service
+        .project_service
         .create_project(&request.name, &request.path)
         .await
         .map_err(|e| e.to_string())?;
@@ -60,7 +60,7 @@ pub async fn get_project(
     id: String,
 ) -> Result<ProjectResponse, String> {
     let project = state
-        .service
+        .project_service
         .get_project(&id)
         .await
         .map_err(|e| e.to_string())?;
@@ -76,7 +76,7 @@ pub async fn rename_project(
     new_name: String,
 ) -> Result<ProjectResponse, String> {
     let project = state
-        .service
+        .project_service
         .rename_project(&id, &new_name)
         .await
         .map_err(|e| e.to_string())?;
@@ -91,7 +91,7 @@ pub async fn archive_project(
     id: String,
 ) -> Result<(), String> {
     state
-        .service
+        .project_service
         .archive_project(&id)
         .await
         .map_err(|e| e.to_string())
@@ -105,7 +105,7 @@ pub async fn delete_project(
 ) -> Result<(), String> {
     // Verify project exists first
     state
-        .service
+        .project_service
         .get_project(&id)
         .await
         .map_err(|e| e.to_string())?;

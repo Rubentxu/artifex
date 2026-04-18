@@ -18,7 +18,7 @@ pub async fn generate_code(
 ) -> Result<String, String> {
     // Validate that the project exists
     let _project = state
-        .service
+        .project_service
         .get_project(&request.project_id)
         .await
         .map_err(|e: ArtifexError| e.to_string())?;

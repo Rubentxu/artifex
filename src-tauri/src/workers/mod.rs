@@ -3,6 +3,7 @@
 //! Contains the worker traits and implementations for processing jobs.
 
 pub mod traits;
+pub mod atlas_pack_types;
 pub mod atlas_pack_worker;
 pub mod code_worker;
 pub mod image_gen_provider;

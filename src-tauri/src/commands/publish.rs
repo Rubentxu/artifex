@@ -61,7 +61,7 @@ pub async fn export_project(
 
     // Load project info
     let project = state
-        .service
+        .project_service
         .get_project(project_id)
         .await
         .map_err(|e| format!("Failed to load project: {}", e))?;

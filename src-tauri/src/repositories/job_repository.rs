@@ -23,6 +23,17 @@ struct JobRow {
     completed_at: Option<String>,
     created_at: String,
     updated_at: String,
+    // New scheduler columns (read but not yet written to domain model)
+    priority: Option<i32>,
+    worker_kind: Option<String>,
+    params: Option<String>,
+    result: Option<String>,
+    error: Option<String>,
+    retries: Option<i32>,
+    max_retries: Option<i32>,
+    dependencies: Option<String>,
+    worker_id: Option<String>,
+    submitted_at: Option<String>,
 }
 
 /// SQLite-backed job repository.
@@ -40,17 +51,21 @@ impl SqliteJobRepository {
 #[async_trait]
 impl JobRepository for SqliteJobRepository {
     async fn create(&self, job: &Job) -> Result<(), ArtifexError> {
+        let now = Timestamp::now();
+        let operation_json = serde_json::to_string(&job.operation).unwrap_or_else(|_| "{}".to_string());
         let result = sqlx::query(
             r#"INSERT INTO jobs (id, project_id, job_type, status, operation, progress_percent,
                                   progress_message, error_message, started_at, completed_at,
-                                  created_at, updated_at)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"#,
+                                  created_at, updated_at,
+                                  priority, worker_kind, params, result, error, retries, max_retries,
+                                  dependencies, worker_id, submitted_at)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"#,
         )
         .bind(job.id.into_uuid().to_string())
         .bind(job.project_id.into_uuid().to_string())
         .bind(&job.job_type)
         .bind(status_to_string(job.status))
-        .bind(serde_json::to_string(&job.operation).unwrap_or_else(|_| "{}".to_string()))
+        .bind(&operation_json)
         .bind(job.progress_percent as i32)
         .bind(&job.progress_message)
         .bind(&job.error_message)
@@ -58,6 +73,17 @@ impl JobRepository for SqliteJobRepository {
         .bind(job.completed_at.map(|t| t.to_string()))
         .bind(job.created_at.to_string())
         .bind(job.updated_at.to_string())
+        // Dual-write new columns
+        .bind(50i32) // priority - default
+        .bind(&job.job_type) // worker_kind = job_type (dual-write)
+        .bind(&operation_json) // params = operation JSON (dual-write)
+        .bind(serde_json::Value::Null) // result - null initially
+        .bind(&job.error_message) // error = error_message (dual-write)
+        .bind(0i32) // retries - default
+        .bind(2i32) // max_retries - default
+        .bind("[]") // dependencies - default empty array
+        .bind(Option::<String>::None) // worker_id - null initially
+        .bind(now.to_string()) // submitted_at = now (dual-write)
         .execute(&self.pool)
         .await;
 
@@ -78,7 +104,9 @@ impl JobRepository for SqliteJobRepository {
         let row: Option<JobRow> = sqlx::query_as(
             r#"SELECT id, project_id, job_type, status, operation, progress_percent,
                       progress_message, error_message, started_at, completed_at,
-                      created_at, updated_at
+                      created_at, updated_at,
+                      priority, worker_kind, params, result, error, retries, max_retries,
+                      dependencies, worker_id, submitted_at
                FROM jobs WHERE id = ?"#,
         )
         .bind(id.into_uuid().to_string())
@@ -93,7 +121,9 @@ impl JobRepository for SqliteJobRepository {
         let rows: Vec<JobRow> = sqlx::query_as(
             r#"SELECT id, project_id, job_type, status, operation, progress_percent,
                       progress_message, error_message, started_at, completed_at,
-                      created_at, updated_at
+                      created_at, updated_at,
+                      priority, worker_kind, params, result, error, retries, max_retries,
+                      dependencies, worker_id, submitted_at
                FROM jobs WHERE project_id = ? ORDER BY created_at DESC"#,
         )
         .bind(project_id.into_uuid().to_string())
@@ -116,7 +146,9 @@ impl JobRepository for SqliteJobRepository {
         let rows: Vec<JobRow> = sqlx::query_as(
             r#"SELECT id, project_id, job_type, status, operation, progress_percent,
                       progress_message, error_message, started_at, completed_at,
-                      created_at, updated_at
+                      created_at, updated_at,
+                      priority, worker_kind, params, result, error, retries, max_retries,
+                      dependencies, worker_id, submitted_at
                FROM jobs WHERE project_id = ? AND status = ? ORDER BY created_at DESC"#,
         )
         .bind(project_id.into_uuid().to_string())
@@ -136,7 +168,9 @@ impl JobRepository for SqliteJobRepository {
         let rows: Vec<JobRow> = sqlx::query_as(
             r#"SELECT id, project_id, job_type, status, operation, progress_percent,
                       progress_message, error_message, started_at, completed_at,
-                      created_at, updated_at
+                      created_at, updated_at,
+                      priority, worker_kind, params, result, error, retries, max_retries,
+                      dependencies, worker_id, submitted_at
                FROM jobs WHERE status = ? ORDER BY created_at ASC"#,
         )
         .bind(status_to_string(status))
@@ -219,14 +253,18 @@ impl JobRepository for SqliteJobRepository {
     }
 
     async fn update_failure(&self, id: &JobId, error_message: &str) -> Result<(), ArtifexError> {
-        let now = Timestamp::now().to_string();
+        let now = Timestamp::now();
+        let now_str = now.to_string();
         let result = sqlx::query(
-            "UPDATE jobs SET status = ?, error_message = ?, completed_at = ?, updated_at = ? WHERE id = ?",
+            r#"UPDATE jobs SET status = ?, error_message = ?, completed_at = ?, updated_at = ?,
+                               error = ?, retries = retries + 1
+               WHERE id = ?"#,
         )
         .bind("failed")
         .bind(error_message)
-        .bind(&now)
-        .bind(&now)
+        .bind(&now_str)
+        .bind(&now_str)
+        .bind(error_message) // dual-write: also write to new error column
         .bind(id.into_uuid().to_string())
         .execute(&self.pool)
         .await;
@@ -241,13 +279,17 @@ impl JobRepository for SqliteJobRepository {
     }
 
     async fn mark_completed(&self, id: &JobId) -> Result<(), ArtifexError> {
-        let now = Timestamp::now().to_string();
+        let now = Timestamp::now();
+        let now_str = now.to_string();
         let result = sqlx::query(
-            "UPDATE jobs SET status = ?, completed_at = ?, updated_at = ? WHERE id = ?",
+            r#"UPDATE jobs SET status = ?, completed_at = ?, updated_at = ?,
+                               result = ?, error = NULL, retries = retries + 1
+               WHERE id = ?"#,
         )
         .bind("completed")
-        .bind(&now)
-        .bind(&now)
+        .bind(&now_str)
+        .bind(&now_str)
+        .bind(serde_json::Value::Null) // result - placeholder, actual result passed separately
         .bind(id.into_uuid().to_string())
         .execute(&self.pool)
         .await;
@@ -367,6 +409,16 @@ mod tests {
             completed_at: None,
             created_at: "2024-01-01T00:00:00Z".to_string(),
             updated_at: "2024-01-01T00:00:00Z".to_string(),
+            priority: Some(50),
+            worker_kind: Some("image_generate".to_string()),
+            params: Some(r#"{"prompt": "test"}"#.to_string()),
+            result: None,
+            error: None,
+            retries: Some(0),
+            max_retries: Some(2),
+            dependencies: Some("[]".to_string()),
+            worker_id: None,
+            submitted_at: Some("2024-01-01T00:00:00Z".to_string()),
         };
 
         let job = row_to_job(&row).unwrap();

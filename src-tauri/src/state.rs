@@ -11,7 +11,7 @@ use crate::workers::WorkerRunner;
 /// Application state holding application services.
 pub struct AppState {
     /// Project application service.
-    pub service: Arc<ProjectApplicationService>,
+    pub project_service: Arc<ProjectApplicationService>,
     /// Job application service.
     pub job_service: Arc<JobApplicationService>,
     /// Asset application service.
@@ -27,7 +27,7 @@ pub struct AppState {
 impl AppState {
     /// Creates a new AppState.
     pub fn new(
-        service: Arc<ProjectApplicationService>,
+        project_service: Arc<ProjectApplicationService>,
         job_service: Arc<JobApplicationService>,
         asset_service: Arc<AssetApplicationService>,
         current_project_id: Mutex<Option<String>>,
@@ -35,7 +35,7 @@ impl AppState {
         model_config_service: Arc<ModelConfigService>,
     ) -> Self {
         Self {
-            service,
+            project_service,
             job_service,
             asset_service,
             current_project_id,

@@ -14,6 +14,7 @@ struct ProjectRow {
     name: String,
     path: String,
     status: String,
+    settings: String,
     created_at: String,
     updated_at: String,
 }
@@ -34,13 +35,14 @@ impl SqliteProjectRepository {
 impl ProjectRepository for SqliteProjectRepository {
     async fn create(&self, project: &Project) -> Result<(), ArtifexError> {
         let result = sqlx::query(
-            r#"INSERT INTO projects (id, name, path, status, created_at, updated_at)
-               VALUES (?, ?, ?, ?, ?, ?)"#,
+            r#"INSERT INTO projects (id, name, path, status, settings, created_at, updated_at)
+               VALUES (?, ?, ?, ?, ?, ?, ?)"#,
         )
         .bind(project.id.into_uuid().to_string())
         .bind(project.name.as_str())
         .bind(project.path.to_string())
         .bind(status_to_string(project.status))
+        .bind("{}") // settings - dual-write: write new column with default
         .bind(project.created_at.to_string())
         .bind(project.updated_at.to_string())
         .execute(&self.pool)
@@ -57,7 +59,7 @@ impl ProjectRepository for SqliteProjectRepository {
 
     async fn find_by_id(&self, id: &ProjectId) -> Result<Option<Project>, ArtifexError> {
         let row: Option<ProjectRow> = sqlx::query_as(
-            "SELECT id, name, path, status, created_at, updated_at FROM projects WHERE id = ?",
+            "SELECT id, name, path, status, settings, created_at, updated_at FROM projects WHERE id = ?",
         )
         .bind(id.into_uuid().to_string())
         .fetch_optional(&self.pool)
@@ -72,7 +74,7 @@ impl ProjectRepository for SqliteProjectRepository {
 
     async fn find_by_name(&self, name: &str) -> Result<Option<Project>, ArtifexError> {
         let row: Option<ProjectRow> = sqlx::query_as(
-            "SELECT id, name, path, status, created_at, updated_at FROM projects WHERE name = ? AND status != 'archived'",
+            "SELECT id, name, path, status, settings, created_at, updated_at FROM projects WHERE name = ? AND status != 'archived'",
         )
         .bind(name)
         .fetch_optional(&self.pool)
@@ -95,7 +97,7 @@ impl ProjectRepository for SqliteProjectRepository {
 
     async fn list_active(&self) -> Result<Vec<Project>, ArtifexError> {
         let rows: Vec<ProjectRow> = sqlx::query_as(
-            "SELECT id, name, path, status, created_at, updated_at FROM projects WHERE status = 'active' ORDER BY updated_at DESC",
+            "SELECT id, name, path, status, settings, created_at, updated_at FROM projects WHERE status = 'active' ORDER BY updated_at DESC",
         )
         .fetch_all(&self.pool)
         .await
@@ -110,7 +112,7 @@ impl ProjectRepository for SqliteProjectRepository {
 
     async fn list_all(&self) -> Result<Vec<Project>, ArtifexError> {
         let rows: Vec<ProjectRow> = sqlx::query_as(
-            "SELECT id, name, path, status, created_at, updated_at FROM projects ORDER BY updated_at DESC",
+            "SELECT id, name, path, status, settings, created_at, updated_at FROM projects ORDER BY updated_at DESC",
         )
         .fetch_all(&self.pool)
         .await
