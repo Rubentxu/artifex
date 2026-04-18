@@ -12,22 +12,34 @@ export const selectedProject = writable<ProjectResponse | null>(null);
 
 export async function initStores(): Promise<void> {
   try {
-    const { Store } = await import('@tauri-apps/plugin-store');
-    store = new Store('panel-state.json');
+    // Timeout guard: if Store init hangs (e.g. missing Tauri plugin), don't block the app
+    const timeout = new Promise<void>((resolve) => setTimeout(() => {
+      console.warn('[ui] Store init timed out, continuing without persistence');
+      resolve();
+    }, 3000));
 
-    const savedSidebar = await store.get<boolean>('sidebarCollapsed');
-    const savedProps = await store.get<boolean>('propertiesCollapsed');
-    const savedProjId = await store.get<string | null>('selectedProjectId');
+    const init = (async () => {
+      const { Store } = await import('@tauri-apps/plugin-store');
+      store = new Store('panel-state.json');
 
-    if (savedSidebar !== undefined && savedSidebar !== null) {
-      sidebarCollapsed.set(savedSidebar);
-    }
-    if (savedProps !== undefined && savedProps !== null) {
-      propertiesCollapsed.set(savedProps);
-    }
-    if (savedProjId !== undefined && savedProjId !== null) {
-      selectedProjectId.set(savedProjId);
-    }
+      const savedSidebar = await store.get<boolean>('sidebarCollapsed');
+      const savedProps = await store.get<boolean>('propertiesCollapsed');
+      const savedProjId = await store.get<string | null>('selectedProjectId');
+
+      if (savedSidebar !== undefined && savedSidebar !== null) {
+        sidebarCollapsed.set(savedSidebar);
+      }
+      if (savedProps !== undefined && savedProps !== null) {
+        propertiesCollapsed.set(savedProps);
+      }
+      if (savedProjId !== undefined && savedProjId !== null) {
+        selectedProjectId.set(savedProjId);
+      }
+    })();
+
+    await Promise.race([init, timeout]);
+  } catch (err) {
+    console.warn('[ui] Failed to init Tauri store, continuing without persistence:', err);
   } finally {
     hydrated = true;
   }

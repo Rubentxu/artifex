@@ -8,13 +8,16 @@ describe('Settings Page', () => {
   it('should have settings navigation', async () => {
     await browser.pause(1000);
     
-    const settingsLink = await browser.$(
-      'a*=Settings, button*=Settings, a*=settings, button*=settings, a*=Config, button*=Config, [href*="settings"]'
-    );
-    const exists = settingsLink && (await settingsLink.isExisting().catch(() => false));
+    // Try to find settings link using XPath (handles partial text match)
+    const settingsLink = await browser.$('xpath=//a[contains(text(),"Settings") or contains(text(),"settings")]').catch(() => null);
+    const settingsBtn = await browser.$('xpath=//button[contains(text(),"Settings") or contains(text(),"settings")]').catch(() => null);
+    const settingsHref = await browser.$('[href*="settings"]').catch(() => null);
+    
+    const link = settingsLink || settingsBtn || settingsHref;
+    const exists = link && (await link.isExisting().catch(() => false));
     
     if (exists) {
-      await settingsLink.click();
+      await link.click();
       await browser.pause(1000);
       const bodyText = await browser.$('body').getText();
       assert.ok(bodyText.length > 0, 'Settings page should render');

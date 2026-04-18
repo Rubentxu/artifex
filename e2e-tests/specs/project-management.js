@@ -20,6 +20,7 @@ describe('Project Management', () => {
   });
 
   it('should have clickable project cards or create button', async () => {
+    await browser.pause(2000);
     const cards = await browser.$$('[class*="card"], [class*="Card"]');
     const buttons = await browser.$$('button');
     // Either we have project cards or at least some buttons (empty state)
