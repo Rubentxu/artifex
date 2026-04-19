@@ -13,7 +13,7 @@ use artifex_shared_kernel::AppError;
 use image::{Rgb, RgbImage};
 use serde::Deserialize;
 
-use super::traits::{JobFuture, JobResult, JobWorker};
+use super::traits::{JobFuture, JobResult, JobWorker, WorkerCategory};
 
 /// Payload for background removal jobs.
 #[derive(Debug, Deserialize)]
@@ -214,6 +214,10 @@ impl JobWorker for ImageProcessWorker {
                 | "image_inpaint"
                 | "image_outpaint"
         )
+    }
+
+    fn category(&self) -> WorkerCategory {
+        WorkerCategory::CpuIntensive
     }
 
     fn process(&self, job: &Job) -> JobFuture {

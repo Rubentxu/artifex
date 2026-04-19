@@ -20,7 +20,7 @@ use wgpu::{DeviceDescriptor, Extent3d, ImageCopyBuffer, ImageCopyTexture, ImageD
 
 use crate::dto::CameraAngle;
 
-use super::traits::{JobFuture, JobResult, JobWorker};
+use super::traits::{JobFuture, JobResult, JobWorker, WorkerCategory};
 
 // ============================================================================
 // Constants
@@ -161,6 +161,10 @@ impl Renderer3dWorker {
 impl JobWorker for Renderer3dWorker {
     fn can_handle(&self, job_type: &str) -> bool {
         job_type == "render_3d"
+    }
+
+    fn category(&self) -> WorkerCategory {
+        WorkerCategory::CpuIntensive
     }
 
     fn process(&self, job: &Job) -> JobFuture {

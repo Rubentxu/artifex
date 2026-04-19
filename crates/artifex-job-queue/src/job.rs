@@ -49,6 +49,9 @@ pub struct Job {
     pub created_at: Timestamp,
     /// When the job was last updated.
     pub updated_at: Timestamp,
+    /// Current attempt number (0-based). Incremented on each retry.
+    #[serde(default)]
+    pub attempt: u8,
 }
 
 impl Job {
@@ -70,6 +73,7 @@ impl Job {
             completed_at: None,
             created_at: now,
             updated_at: now,
+            attempt: 0,
         }
     }
 

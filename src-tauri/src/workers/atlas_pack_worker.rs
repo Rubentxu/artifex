@@ -12,7 +12,7 @@ use serde::{Deserialize, Serialize};
 use texture_packer::exporter::ImageExporter;
 use texture_packer::{TexturePacker, TexturePackerConfig};
 
-use super::traits::{JobFuture, JobResult, JobWorker};
+use super::traits::{JobFuture, JobResult, JobWorker, WorkerCategory};
 
 /// Valid max_size values for atlas packing.
 const VALID_MAX_SIZES: &[u32] = &[512, 1024, 2048, 4096];
@@ -78,6 +78,10 @@ impl AtlasPackWorker {
 impl JobWorker for AtlasPackWorker {
     fn can_handle(&self, job_type: &str) -> bool {
         job_type == "pack_atlas"
+    }
+
+    fn category(&self) -> WorkerCategory {
+        WorkerCategory::CpuIntensive
     }
 
     fn process(&self, job: &Job) -> JobFuture {

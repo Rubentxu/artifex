@@ -7,6 +7,16 @@ use std::pin::Pin;
 use artifex_job_queue::Job;
 use artifex_shared_kernel::AppError;
 
+/// Category of worker for dispatch and isolation purposes.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum WorkerCategory {
+    /// Default — runs on tokio async executor with standard timeout.
+    #[default]
+    Async,
+    /// CPU-intensive — runs on blocking thread pool with extended timeout.
+    CpuIntensive,
+}
+
 /// Result of a job processed by a worker.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct JobResult {
@@ -45,6 +55,14 @@ pub type JobFuture = Pin<Box<dyn std::future::Future<Output = Result<JobResult, 
 pub trait JobWorker: Send + Sync {
     /// Returns true if this worker can handle jobs of the given type.
     fn can_handle(&self, job_type: &str) -> bool;
+
+    /// Returns the category of this worker for dispatch and isolation.
+    ///
+    /// Defaults to [`WorkerCategory::Async`]. CPU-intensive workers should
+    /// override to return [`WorkerCategory::CpuIntensive`].
+    fn category(&self) -> WorkerCategory {
+        WorkerCategory::Async
+    }
 
     /// Processes a job and returns the result.
     ///

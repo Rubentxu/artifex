@@ -337,6 +337,7 @@ fn row_to_job(row: &JobRow) -> Result<Job, ArtifexError> {
         completed_at,
         created_at,
         updated_at,
+        attempt: row.retries.unwrap_or(0) as u8,
     })
 }
 
