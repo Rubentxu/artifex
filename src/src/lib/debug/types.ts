@@ -71,6 +71,43 @@ export interface RouteInfo {
 }
 
 /**
+ * Navigation link information
+ */
+export interface NavigationLink {
+  href: string;
+  text: string;
+  active: boolean;
+}
+
+/**
+ * Dialog information
+ */
+export interface DialogInfo {
+  title: string;
+  visible: boolean;
+  content: string;
+}
+
+/**
+ * Button information
+ */
+export interface ButtonInfo {
+  text: string;
+  visible: boolean;
+  disabled: boolean;
+  classes: string[];
+}
+
+/**
+ * Job status from StatusBar
+ */
+export interface JobStatus {
+  hasActiveJobs: boolean;
+  statusText: string;
+  progressPercent: number | null;
+}
+
+/**
  * Full page snapshot aggregating all debug data
  */
 export interface PageSnapshot {
@@ -85,13 +122,27 @@ export interface PageSnapshot {
  * The full DebugAPI surface exposed on window.__ARTIFEX_DEBUG__
  */
 export interface DebugAPI {
+  // Store inspection
   getStores(): Record<string, unknown>;
   getStore(name: string): unknown;
+  // Route/URL
   getRoute(): RouteInfo;
+  // DOM queries
   getElement(selector: string): ElementInfo | null;
   getElements(pattern: string): ElementInfo[];
+  getNavigation(): NavigationLink[];
+  getDialogs(): DialogInfo[];
+  getButtons(textPattern?: string): ButtonInfo[];
+  getTextContent(selector: string): string;
+  hasText(text: string): boolean;
+  // Viewport
   getViewport(): ViewportInfo;
+  // StatusBar
+  getActiveJobs(): JobStatus;
+  // Tauri
   getTauriContext(): TauriContext;
+  // Utilities
+  waitForCondition(predicateCode: string, timeout: number): boolean;
   snapshot(): PageSnapshot;
   destroy(): void;
   version: string;

@@ -76,6 +76,58 @@ export async function debugGetElements(browser, pattern) {
 }
 
 /**
+ * Get navigation links
+ * @param {WebDriverIO.Browser} browser
+ */
+export async function debugGetNavigation(browser) {
+  return browser.execute(() => window.__ARTIFEX_DEBUG__.getNavigation());
+}
+
+/**
+ * Get open dialogs
+ * @param {WebDriverIO.Browser} browser
+ */
+export async function debugGetDialogs(browser) {
+  return browser.execute(() => window.__ARTIFEX_DEBUG__.getDialogs());
+}
+
+/**
+ * Get buttons, optionally filtered by text pattern
+ * @param {WebDriverIO.Browser} browser
+ * @param {string} [textPattern]
+ */
+export async function debugGetButtons(browser, textPattern) {
+  return browser.execute(
+    (pattern) => window.__ARTIFEX_DEBUG__.getButtons(pattern),
+    textPattern
+  );
+}
+
+/**
+ * Get text content of an element
+ * @param {WebDriverIO.Browser} browser
+ * @param {string} selector CSS selector
+ */
+export async function debugGetTextContent(browser, selector) {
+  return browser.execute(
+    (sel) => window.__ARTIFEX_DEBUG__.getTextContent(sel),
+    selector
+  );
+}
+
+/**
+ * Check if text exists anywhere on the page
+ * @param {WebDriverIO.Browser} browser
+ * @param {string} text
+ */
+export async function debugHasText(browser, text) {
+  return browser.execute(
+    (t) => window.__ARTIFEX_DEBUG__.hasText(t),
+    text
+  );
+}
+
+/**
  * Get current viewport info
  * @param {WebDriverIO.Browser} browser
  */
@@ -84,11 +136,33 @@ export async function debugGetViewport(browser) {
 }
 
 /**
+ * Get active job status
+ * @param {WebDriverIO.Browser} browser
+ */
+export async function debugGetActiveJobs(browser) {
+  return browser.execute(() => window.__ARTIFEX_DEBUG__.getActiveJobs());
+}
+
+/**
  * Get current Tauri context
  * @param {WebDriverIO.Browser} browser
  */
 export async function debugGetTauriContext(browser) {
   return browser.execute(() => window.__ARTIFEX_DEBUG__.getTauriContext());
+}
+
+/**
+ * Wait for a condition to be true
+ * @param {WebDriverIO.Browser} browser
+ * @param {string} predicateCode JavaScript code that returns a boolean
+ * @param {number} timeout timeout in ms
+ */
+export async function debugWaitForCondition(browser, predicateCode, timeout) {
+  return browser.execute(
+    (code, ms) => window.__ARTIFEX_DEBUG__.waitForCondition(code, ms),
+    predicateCode,
+    timeout
+  );
 }
 
 /**

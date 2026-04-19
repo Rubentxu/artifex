@@ -1,6 +1,19 @@
 // Main debug harness entry point — wires store-inspector + dom-inspector + route/viewport/tauri
 import { initStoreInspector, getStores, getStore, destroyStoreInspector } from './store-inspector';
-import { getElement, getElements, getViewport, getRoute, getTauriContext } from './dom-inspector';
+import {
+  getElement,
+  getElements,
+  getViewport,
+  getRoute,
+  getTauriContext,
+  getNavigation,
+  getDialogs,
+  getButtons,
+  getTextContent,
+  hasText,
+  getActiveJobs,
+  waitForCondition,
+} from './dom-inspector';
 import type { DebugAPI } from './types';
 
 const VERSION = '1.0.0';
@@ -18,8 +31,15 @@ export function initDebugHarness(): void {
     getRoute,
     getElement,
     getElements,
+    getNavigation,
+    getDialogs,
+    getButtons,
+    getTextContent,
+    hasText,
     getViewport,
+    getActiveJobs,
     getTauriContext,
+    waitForCondition,
     snapshot() {
       return {
         stores: getStores(),

@@ -5,6 +5,10 @@ import type {
   TauriContext,
   RouteInfo,
   DOMRectJson,
+  NavigationLink,
+  DialogInfo,
+  ButtonInfo,
+  JobStatus,
 } from './types';
 
 function rectToJson(rect: DOMRect): DOMRectJson {
@@ -120,4 +124,138 @@ export function getRoute(): RouteInfo {
     });
   }
   return { path: pathname, hash, search: parsedSearch, origin };
+}
+
+export function getNavigation(): NavigationLink[] {
+  if (typeof document === 'undefined') return [];
+  const navLinks = document.querySelectorAll('nav a');
+  const currentPath = window.location.pathname;
+  return Array.from(navLinks).map((el) => {
+    const href = el.getAttribute('href') ?? '';
+    const text = (el.textContent ?? '').trim();
+    const active =
+      href === currentPath ||
+      (href !== '/' && currentPath.startsWith(href));
+    return { href, text, active };
+  });
+}
+
+export function getDialogs(): DialogInfo[] {
+  if (typeof document === 'undefined') return [];
+  // Look for dialog elements: [role="dialog"], dialog elements, and overlay divs
+  const dialogSelectors = [
+    '[role="dialog"]',
+    'dialog',
+    '[class*="dialog-overlay"]',
+    '[class*="dialog"]',
+  ];
+  const results: DialogInfo[] = [];
+  for (const selector of dialogSelectors) {
+    const els = document.querySelectorAll(selector);
+    for (const el of els) {
+      const computed = window.getComputedStyle(el);
+      const visible =
+        computed.display !== 'none' &&
+        computed.visibility !== 'hidden' &&
+        parseFloat(computed.opacity) !== 0;
+      // Get title from common title elements
+      const titleEl =
+        el.querySelector('[class*="title"]') ||
+        el.querySelector('h1, h2, h3') ||
+        el.querySelector('[role="heading"]');
+      const title = titleEl ? (titleEl.textContent ?? '').trim() : el.tagName;
+      const content = (el.textContent ?? '').trim().slice(0, 200);
+      results.push({ title, visible, content });
+    }
+  }
+  return results;
+}
+
+export function getButtons(textPattern?: string): ButtonInfo[] {
+  if (typeof document === 'undefined') return [];
+  const buttons = document.querySelectorAll('button');
+  return Array.from(buttons)
+    .filter((btn) => {
+      if (!textPattern) return true;
+      const text = (btn.textContent ?? '').trim();
+      return text.toLowerCase().includes(textPattern.toLowerCase());
+    })
+    .map((btn) => {
+      const computed = window.getComputedStyle(btn);
+      const visible =
+        computed.display !== 'none' &&
+        computed.visibility !== 'hidden' &&
+        parseFloat(computed.opacity) !== 0;
+      return {
+        text: (btn.textContent ?? '').trim(),
+        visible,
+        disabled: btn.disabled,
+        classes: Array.from(btn.classList),
+      };
+    });
+}
+
+export function getTextContent(selector: string): string {
+  if (typeof document === 'undefined') return '';
+  const el = document.querySelector(selector);
+  if (!el) return '';
+  return (el.textContent ?? '').trim();
+}
+
+export function hasText(text: string): boolean {
+  if (typeof document === 'undefined') return false;
+  const body = document.body;
+  if (!body) return false;
+  return body.textContent?.toLowerCase().includes(text.toLowerCase()) ?? false;
+}
+
+export function getActiveJobs(): JobStatus {
+  if (typeof document === 'undefined') {
+    return { hasActiveJobs: false, statusText: '', progressPercent: null };
+  }
+  // Look for status bar text that indicates job status
+  const statusBar =
+    document.querySelector('[class*="status"]') ||
+    document.querySelector('footer') ||
+    document.querySelector('[class*="StatusBar"]');
+  if (!statusBar) {
+    return { hasActiveJobs: false, statusText: 'Ready', progressPercent: null };
+  }
+  const text = (statusBar.textContent ?? '').trim();
+  // Check for common job-related patterns
+  const processingMatch = text.match(/Processing.*?(\d+)%/);
+  const hasActiveJobs =
+    text.includes('Processing') ||
+    text.includes('Generating') ||
+    text.includes('Working');
+  let progressPercent: number | null = null;
+  if (processingMatch) {
+    progressPercent = parseInt(processingMatch[1], 10);
+  }
+  let statusText = 'Ready';
+  if (text.includes('Processing')) statusText = 'Processing';
+  else if (text.includes('Generating')) statusText = 'Generating';
+  else if (text.includes('Ready')) statusText = 'Ready';
+  return { hasActiveJobs, statusText, progressPercent };
+}
+
+export function waitForCondition(
+  predicateCode: string,
+  timeout: number
+): boolean {
+  if (typeof window === 'undefined') return false;
+  const start = Date.now();
+  const check = () => {
+    try {
+      // eslint-disable-next-line no-eval
+      const result = eval(predicateCode);
+      return result === true;
+    } catch {
+      return false;
+    }
+  };
+  while (Date.now() - start < timeout) {
+    if (check()) return true;
+  }
+  return false;
 }
