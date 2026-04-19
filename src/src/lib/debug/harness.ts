@@ -16,23 +16,6 @@ import {
 } from './dom-inspector';
 import type { DebugAPI } from './types';
 
-// Mock layer — only loaded in DEV mode (tree-shaken in production)
-import {
-  enableMock,
-  disableMock,
-  isMockMode,
-  setMockData,
-  setMockTier,
-  setMockJobResult,
-  simulateJobProgress,
-  simulateJobCompleted,
-  simulateJobFailed,
-  getMockCalls,
-  getMockCallHistory,
-  resetMockCalls,
-  getMockState,
-} from './mock-layer';
-
 const VERSION = '1.0.0';
 
 let api: DebugAPI | null = null;
@@ -40,6 +23,9 @@ let api: DebugAPI | null = null;
 export function initDebugHarness(): void {
   // Subscribe to all stores
   initStoreInspector();
+
+  // @ts-ignore — __ARTIFEX_E2E__ is injected by vite.config.ts define
+  const isE2E = __ARTIFEX_E2E__;
 
   // Build the API object
   api = {
@@ -70,24 +56,61 @@ export function initDebugHarness(): void {
       destroyDebugHarness();
     },
     version: VERSION,
-    // Mock layer API — only functional in DEV mode
-    mock: import.meta.env.DEV
-      ? {
-          enableMock,
-          disableMock,
-          isMockMode,
-          setMockData,
-          setMockTier,
-          setMockJobResult,
-          simulateJobProgress,
-          simulateJobCompleted,
-          simulateJobFailed,
-          getMockCalls,
-          getMockCallHistory,
-          resetMockCalls,
-          getMockState,
-        }
-      : undefined,
+    // Mock layer API — lazily loaded only in E2E mode
+    mock: isE2E ? {
+      enableMock: async () => {
+        const mock = await import('./mock-layer');
+        return mock.enableMock();
+      },
+      disableMock: async () => {
+        const mock = await import('./mock-layer');
+        return mock.disableMock();
+      },
+      isMockMode: async () => {
+        const mock = await import('./mock-layer');
+        return mock.isMockMode();
+      },
+      setMockData: async (data: unknown) => {
+        const mock = await import('./mock-layer');
+        return mock.setMockData(data);
+      },
+      setMockTier: async (tier: string) => {
+        const mock = await import('./mock-layer');
+        return mock.setMockTier(tier);
+      },
+      setMockJobResult: async (result: unknown) => {
+        const mock = await import('./mock-layer');
+        return mock.setMockJobResult(result);
+      },
+      simulateJobProgress: async (jobId: string, progress: number) => {
+        const mock = await import('./mock-layer');
+        return mock.simulateJobProgress(jobId, progress);
+      },
+      simulateJobCompleted: async (jobId: string) => {
+        const mock = await import('./mock-layer');
+        return mock.simulateJobCompleted(jobId);
+      },
+      simulateJobFailed: async (jobId: string, error: string) => {
+        const mock = await import('./mock-layer');
+        return mock.simulateJobFailed(jobId, error);
+      },
+      getMockCalls: async () => {
+        const mock = await import('./mock-layer');
+        return mock.getMockCalls();
+      },
+      getMockCallHistory: async () => {
+        const mock = await import('./mock-layer');
+        return mock.getMockCallHistory();
+      },
+      resetMockCalls: async () => {
+        const mock = await import('./mock-layer');
+        return mock.resetMockCalls();
+      },
+      getMockState: async () => {
+        const mock = await import('./mock-layer');
+        return mock.getMockState();
+      },
+    } : undefined,
   };
 
   // Attach to global
@@ -99,10 +122,6 @@ export function initDebugHarness(): void {
 export function destroyDebugHarness(): void {
   if (api) {
     destroyStoreInspector();
-    // Ensure mock is disabled on destroy
-    if (import.meta.env.DEV && api.mock?.isMockMode()) {
-      api.mock.disableMock();
-    }
     delete (window as unknown as Record<string, unknown>).__ARTIFEX_DEBUG__;
     api = null;
     console.log('[debug-harness] destroyed');

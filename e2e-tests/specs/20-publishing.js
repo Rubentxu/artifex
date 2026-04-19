@@ -5,6 +5,7 @@
 import assert from 'node:assert/strict';
 import {
   waitForAppReady,
+  navigateTo,
   debugEnableMock,
   debugDisableMock,
   debugGetMockCalls,
@@ -15,7 +16,7 @@ describe('20 Publishing', () => {
   before(async () => {
     await waitForAppReady(browser);
     await debugEnableMock(browser);
-    await browser.url('/assets');
+    await navigateTo(browser, '/assets');
     await waitForAppReady(browser);
   });
 

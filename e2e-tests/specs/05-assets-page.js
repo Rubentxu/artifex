@@ -5,16 +5,18 @@
 import assert from 'node:assert/strict';
 import {
   waitForAppReady,
+  navigateTo,
   debugGetStore,
   debugGetRoute,
   debugGetElement,
   debugGetElements,
+  debugHasText,
 } from '../helpers/debug-api.js';
 
 describe('05 Assets Page', () => {
   beforeEach(async () => {
     await waitForAppReady(browser);
-    await browser.url('/assets');
+    await navigateTo(browser, '/assets');
     await waitForAppReady(browser);
   });
 
@@ -59,11 +61,12 @@ describe('05 Assets Page', () => {
   });
 
   it('should render asset grid or empty state', async () => {
-    const assetGrid = await debugGetElement(browser, '[class*="grid"], [class*="asset"]');
-    const emptyState = await debugGetElement(browser, '[class*="empty"]');
+    const assetGrid = await debugGetElement(browser, '[class*="grid"]');
+    const hasNoAssets = await debugHasText(browser, 'No assets yet') ||
+                        await debugHasText(browser, 'Select a project');
     assert.ok(
-      assetGrid !== null || emptyState !== null,
-      'Should have asset grid or empty state'
+      assetGrid !== null || hasNoAssets,
+      'Should have asset grid or empty state text'
     );
   });
 });

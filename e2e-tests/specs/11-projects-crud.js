@@ -5,6 +5,7 @@
 import assert from 'node:assert/strict';
 import {
   waitForAppReady,
+  navigateTo,
   debugGetStore,
   debugEnableMock,
   debugDisableMock,
@@ -16,7 +17,7 @@ describe('11 Projects CRUD', () => {
   before(async () => {
     await waitForAppReady(browser);
     await debugEnableMock(browser);
-    await browser.url('/');
+    await navigateTo(browser, '/');
     await waitForAppReady(browser);
   });
 
@@ -48,7 +49,7 @@ describe('11 Projects CRUD', () => {
   it('should record list_projects in mock call history', async () => {
     const calls = await debugGetMockCalls(browser);
     // EnableMock itself may trigger calls, so check for list_projects
-    await browser.url('/');
+    await navigateTo(browser, '/');
     await waitForAppReady(browser);
     const callsAfterReload = await debugGetMockCalls(browser);
     assert.ok(callsAfterReload.some(c => c.command === 'list_projects'), 'Should call list_projects');

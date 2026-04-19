@@ -5,6 +5,7 @@
 import assert from 'node:assert/strict';
 import {
   waitForAppReady,
+  navigateTo,
   debugGetNavigation,
   debugGetRoute,
   debugGetElement,
@@ -28,29 +29,28 @@ describe('02 Navigation', () => {
   });
 
   it('should navigate to /assets when clicking Assets link', async () => {
-    // Navigate to assets via URL first
-    await browser.url('/assets');
+    await navigateTo(browser, '/assets');
     await waitForAppReady(browser);
     const route = await debugGetRoute(browser);
     assert.ok(route.path === '/assets', `Should be on /assets, got ${route.path}`);
   });
 
   it('should navigate to /settings when clicking Settings link', async () => {
-    await browser.url('/settings');
+    await navigateTo(browser, '/settings');
     await waitForAppReady(browser);
     const route = await debugGetRoute(browser);
     assert.ok(route.path === '/settings', `Should be on /settings, got ${route.path}`);
   });
 
   it('should navigate to / (projects) when clicking Projects link', async () => {
-    await browser.url('/');
+    await navigateTo(browser, '/');
     await waitForAppReady(browser);
     const route = await debugGetRoute(browser);
     assert.ok(route.path === '/', `Should be on /, got ${route.path}`);
   });
 
   it('should have route info match current URL', async () => {
-    await browser.url('/assets');
+    await navigateTo(browser, '/assets');
     await waitForAppReady(browser);
     const route = await debugGetRoute(browser);
     const currentUrl = await browser.getUrl();
@@ -71,7 +71,7 @@ describe('02 Navigation', () => {
     if (toggleBtn?.visible) {
       await browser.execute(() => {
         const btn = document.querySelector('[class*="collapse"], [class*="toggle"]');
-        if (btn) (btn as HTMLElement).click();
+        if (btn) btn.click();
       });
       await browser.pause(300);
     }

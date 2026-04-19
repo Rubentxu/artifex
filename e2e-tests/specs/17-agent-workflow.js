@@ -5,6 +5,7 @@
 import assert from 'node:assert/strict';
 import {
   waitForAppReady,
+  navigateTo,
   debugGetStore,
   debugEnableMock,
   debugDisableMock,
@@ -16,7 +17,7 @@ describe('17 Agent Workflow', () => {
   before(async () => {
     await waitForAppReady(browser);
     await debugEnableMock(browser);
-    await browser.url('/agent');
+    await navigateTo(browser, '/agent');
     await waitForAppReady(browser);
   });
 

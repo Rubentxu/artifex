@@ -61,6 +61,14 @@ build-frontend:
 build-frontend-dev:
     cd {{ src_dir }} && npx vite build --mode development
 
+# Build frontend for E2E tests (dev mode + debug harness enabled)
+build-frontend-e2e:
+    cd {{ src_dir }} && ARTIFEX_E2E=1 npx vite build --mode development
+
+# Debug build for E2E (frontend with harness + Rust debug binary)
+build-debug-e2e: build-frontend-e2e
+    cargo build
+
 # ════════════════════════════════════════════════════════════════
 #  Testing
 # ════════════════════════════════════════════════════════════════
@@ -81,27 +89,27 @@ test-frontend:
     cd {{ src_dir }} && npm run test
 
 # Run E2E tests with tauri-driver (headless via xvfb)
-test-e2e: build-debug
+test-e2e: build-debug-e2e
     cd {{ e2e_dir }} && xvfb-run npx wdio run wdio.conf.js
 
 # Run E2E tests headed (with GUI, for debugging)
-test-e2e-headed: build-debug
+test-e2e-headed: build-debug-e2e
     cd {{ e2e_dir }} && npx wdio run wdio.conf.js --watch
 
 # Run E2E tests with a specific spec file
-test-e2e-spec spec: build-debug
+test-e2e-spec spec: build-debug-e2e
     cd {{ e2e_dir }} && xvfb-run npx wdio run wdio.conf.js --spec "{{ spec }}"
 
 # Run a single E2E spec by number (e.g., just test-e2e-one 01)
-test-e2e-one number: build-debug
+test-e2e-one number: build-debug-e2e
     cd {{ e2e_dir }} && xvfb-run npx wdio run wdio.conf.js --spec "specs/{{ number }}-*.js"
 
 # Run E2E tests for AI mock features (specs 11-23)
-test-e2e-mock: build-debug
+test-e2e-mock: build-debug-e2e
     cd {{ e2e_dir }} && xvfb-run npx wdio run wdio.conf.js --spec "specs/1[1-9]-*.js" --spec "specs/2[0-3]-*.js"
 
 # Run E2E tests for base features only (specs 01-10)
-test-e2e-base: build-debug
+test-e2e-base: build-debug-e2e
     cd {{ e2e_dir }} && xvfb-run npx wdio run wdio.conf.js --spec "specs/0[1-9]-*.js" --spec "specs/10-*.js"
 
 # ════════════════════════════════════════════════════════════════

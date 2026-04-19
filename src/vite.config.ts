@@ -11,6 +11,9 @@ export default defineConfig({
     strictPort: true,
   },
   envPrefix: ['VITE_', 'TAURI_'],
+  define: {
+    __ARTIFEX_E2E__: JSON.stringify(!!process.env.ARTIFEX_E2E),
+  },
   build: {
     target: 'esnext',
     minify: 'esbuild',

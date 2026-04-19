@@ -5,6 +5,7 @@
 import assert from 'node:assert/strict';
 import {
   waitForAppReady,
+  navigateTo,
   debugGetStore,
   debugEnableMock,
   debugDisableMock,
@@ -17,7 +18,7 @@ describe('21 Identity Tier', () => {
   before(async () => {
     await waitForAppReady(browser);
     await debugEnableMock(browser);
-    await browser.url('/');
+    await navigateTo(browser, '/');
     await waitForAppReady(browser);
   });
 

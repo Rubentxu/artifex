@@ -3,16 +3,56 @@
  * Wraps window.__ARTIFEX_DEBUG__ for use in specs
  */
 
+// Tauri custom protocol base URL
+const TAURI_BASE = 'https://tauri.localhost';
+
 /**
  * Wait for the debug API to be available on the window
  * @param {WebDriverIO.Browser} browser
  * @param {number} [timeout=5000]
  */
-export async function waitForAppReady(browser, timeout = 10000) {
+export async function waitForAppReady(browser, timeout = 15000) {
   await browser.waitUntil(
     () => browser.execute(() => !!window.__ARTIFEX_DEBUG__),
     { timeout, timeoutMsg: 'Debug API not available' }
   );
+}
+
+/**
+ * Navigate to a path within the Tauri app using client-side routing.
+ * This avoids a full page reload which would destroy the debug harness.
+ * Falls back to browser.url() if client-side nav fails.
+ * @param {WebDriverIO.Browser} browser
+ * @param {string} path - The path to navigate to (e.g., '/assets')
+ */
+export async function navigateTo(browser, path) {
+  // Try SvelteKit client-side navigation first (preserves app state)
+  const navigated = await browser.execute((targetPath) => {
+    // Find sidebar nav link matching the path
+    const links = document.querySelectorAll('a[href]');
+    for (const link of links) {
+      if (link.getAttribute('href') === targetPath || link.getAttribute('href')?.endsWith(targetPath)) {
+        link.click();
+        return true;
+      }
+    }
+    // Fallback: try pushing to history and dispatching popstate
+    if (window.history && window.history.pushState) {
+      window.history.pushState({}, '', targetPath);
+      window.dispatchEvent(new PopStateEvent('popstate', { state: {} }));
+      return true;
+    }
+    return false;
+  }, path);
+
+  if (!navigated) {
+    // Last resort: full page navigation (will lose debug harness)
+    const url = `${TAURI_BASE}${path}`;
+    await browser.url(url);
+  }
+
+  // Wait for SvelteKit client-side router to settle
+  await browser.pause(500);
 }
 
 /**

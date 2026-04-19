@@ -5,6 +5,7 @@
 import assert from 'node:assert/strict';
 import {
   waitForAppReady,
+  navigateTo,
   debugEnableMock,
   debugDisableMock,
   debugGetMockCalls,
@@ -15,7 +16,7 @@ describe('22 Model Config', () => {
   before(async () => {
     await waitForAppReady(browser);
     await debugEnableMock(browser);
-    await browser.url('/settings');
+    await navigateTo(browser, '/settings');
     await waitForAppReady(browser);
   });
 

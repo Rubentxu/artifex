@@ -9,7 +9,8 @@
 
   onMount(async () => {
     await initStores();
-    if (import.meta.env.DEV) {
+    // @ts-ignore — __ARTIFEX_E2E__ is injected by vite.config.ts define
+    if (import.meta.env.DEV || __ARTIFEX_E2E__) {
       const { initDebugHarness } = await import('$lib/debug/harness');
       initDebugHarness();
     }

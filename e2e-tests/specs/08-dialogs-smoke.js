@@ -5,6 +5,7 @@
 import assert from 'node:assert/strict';
 import {
   waitForAppReady,
+  navigateTo,
   debugGetElement,
   debugGetElements,
   debugGetDialogs,
@@ -14,7 +15,7 @@ describe('08 Dialogs Smoke Test', () => {
   beforeEach(async () => {
     await waitForAppReady(browser);
     // Navigate to assets page where dialog triggers are likely
-    await browser.url('/assets');
+    await navigateTo(browser, '/assets');
     await waitForAppReady(browser);
   });
 

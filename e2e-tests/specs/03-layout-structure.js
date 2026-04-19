@@ -5,6 +5,7 @@
 import assert from 'node:assert/strict';
 import {
   waitForAppReady,
+  navigateTo,
   debugGetElement,
   debugGetViewport,
   debugHasText,
@@ -14,7 +15,7 @@ import {
 describe('03 Layout Structure', () => {
   beforeEach(async () => {
     await waitForAppReady(browser);
-    await browser.url('/');
+    await navigateTo(browser, '/');
     await waitForAppReady(browser);
   });
 

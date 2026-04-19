@@ -5,6 +5,7 @@
 import assert from 'node:assert/strict';
 import {
   waitForAppReady,
+  navigateTo,
   debugGetStore,
   debugEnableMock,
   debugDisableMock,
@@ -16,7 +17,7 @@ describe('14 Audio Generation', () => {
   before(async () => {
     await waitForAppReady(browser);
     await debugEnableMock(browser);
-    await browser.url('/assets');
+    await navigateTo(browser, '/assets');
     await waitForAppReady(browser);
   });
 

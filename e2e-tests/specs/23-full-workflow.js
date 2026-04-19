@@ -5,6 +5,7 @@
 import assert from 'node:assert/strict';
 import {
   waitForAppReady,
+  navigateTo,
   debugGetStore,
   debugEnableMock,
   debugDisableMock,
@@ -29,7 +30,7 @@ describe('23 Full Workflow', () => {
 
   it('should execute full sequence: projects → assets → generation', async () => {
     // Step 1: Navigate to home (projects list)
-    await browser.url('/');
+    await navigateTo(browser, '/');
     await waitForAppReady(browser);
     await debugWaitForRoute(browser, '/');
 
@@ -38,7 +39,7 @@ describe('23 Full Workflow', () => {
     assert.ok(projectStore, 'projectStore should exist');
 
     // Step 2: Navigate to assets
-    await browser.url('/assets');
+    await navigateTo(browser, '/assets');
     await waitForAppReady(browser);
     await debugWaitForRoute(browser, '/assets');
 
@@ -73,7 +74,7 @@ describe('23 Full Workflow', () => {
     await debugResetMockCalls(browser);
 
     // Trigger multiple operations
-    await browser.url('/assets');
+    await navigateTo(browser, '/assets');
     await waitForAppReady(browser);
 
     await browser.execute(() => {
@@ -101,7 +102,7 @@ describe('23 Full Workflow', () => {
     assert.ok(isMock, 'Mock should be enabled');
 
     // Perform operations
-    await browser.url('/');
+    await navigateTo(browser, '/');
     await waitForAppReady(browser);
 
     // Disable mock
@@ -121,25 +122,25 @@ describe('23 Full Workflow', () => {
     await debugResetMockCalls(browser);
 
     // Home
-    await browser.url('/');
+    await navigateTo(browser, '/');
     await waitForAppReady(browser);
     const store1 = await debugGetStore(browser, 'project');
     assert.ok(store1 !== undefined, 'Store should exist at home');
 
     // Assets
-    await browser.url('/assets');
+    await navigateTo(browser, '/assets');
     await waitForAppReady(browser);
     const store2 = await debugGetStore(browser, 'asset');
     assert.ok(store2 !== undefined, 'Store should exist at assets');
 
     // Settings
-    await browser.url('/settings');
+    await navigateTo(browser, '/settings');
     await waitForAppReady(browser);
     const store3 = await debugGetStore(browser, 'project');
     // Settings may not have project store directly
 
     // Back to Home
-    await browser.url('/');
+    await navigateTo(browser, '/');
     await waitForAppReady(browser);
     const store4 = await debugGetStore(browser, 'project');
     assert.ok(store4 !== undefined, 'Store should exist when back home');
