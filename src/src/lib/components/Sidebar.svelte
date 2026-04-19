@@ -2,7 +2,9 @@
   import { page } from '$app/state';
   import { sidebarCollapsed, toggleSidebar } from '$lib/stores/ui';
   import { projectStore, selectedProject } from '$lib/stores/project';
+  import { identityStore } from '$lib/stores/identity';
   import type { ProjectResponse } from '$lib/types';
+  import { onMount } from 'svelte';
 
   function handleProjectClick(project: ProjectResponse) {
     projectStore.selectProject(project.id);
@@ -12,6 +14,11 @@
     // Dispatch custom event for parent to handle
     window.dispatchEvent(new CustomEvent('open-create-project'));
   }
+
+  // Load identity on mount
+  onMount(() => {
+    identityStore.loadIdentity();
+  });
 </script>
 
 <aside
@@ -27,6 +34,11 @@
           A
         </div>
         <span class="font-semibold text-lg">Artifex</span>
+        {#if $identityStore.tier === 'pro'}
+          <span class="px-2 py-0.5 text-xs font-bold uppercase bg-purple-500/20 text-purple-400 rounded">
+            PRO
+          </span>
+        {/if}
       </div>
     {:else}
       <div class="w-8 h-8 bg-[var(--color-accent)] rounded-lg flex items-center justify-center font-bold text-white mx-auto">

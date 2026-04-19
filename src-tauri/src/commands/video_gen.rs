@@ -14,6 +14,16 @@ pub async fn generate_video(
     state: State<'_, AppState>,
     request: GenerateVideoRequest,
 ) -> Result<String, String> {
+    // Check tier - Pro required for video generation
+    let tier = state
+        .identity_service
+        .get_tier()
+        .await
+        .map_err(|e| e.to_string())?;
+    if !tier.is_pro() {
+        return Err("Pro tier required for video generation".to_string());
+    }
+
     // Validate that the source asset exists
     let source_asset = state
         .asset_service

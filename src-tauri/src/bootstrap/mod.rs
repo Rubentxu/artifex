@@ -4,6 +4,7 @@
 
 pub mod app;
 pub mod database;
+pub mod identity;
 pub mod model_config;
 pub mod repositories;
 pub mod services;

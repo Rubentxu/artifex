@@ -5,6 +5,7 @@ use std::sync::{Arc, Mutex};
 use crate::application::asset_service::AssetApplicationService;
 use crate::application::job_service::JobApplicationService;
 use crate::application::project_service::ProjectApplicationService;
+use crate::identity::service::IdentityService;
 use crate::model_config::ModelConfigService;
 use crate::workers::WorkerRunner;
 
@@ -22,6 +23,8 @@ pub struct AppState {
     pub worker_runner: Arc<Mutex<Option<WorkerRunner>>>,
     /// Model configuration service.
     pub model_config_service: Arc<ModelConfigService>,
+    /// Identity service for user profile and quotas.
+    pub identity_service: Arc<IdentityService>,
 }
 
 impl AppState {
@@ -33,6 +36,7 @@ impl AppState {
         current_project_id: Mutex<Option<String>>,
         worker_runner: Arc<Mutex<Option<WorkerRunner>>>,
         model_config_service: Arc<ModelConfigService>,
+        identity_service: Arc<IdentityService>,
     ) -> Self {
         Self {
             project_service,
@@ -41,6 +45,7 @@ impl AppState {
             current_project_id,
             worker_runner,
             model_config_service,
+            identity_service,
         }
     }
 }

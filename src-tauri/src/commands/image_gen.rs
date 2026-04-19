@@ -3,6 +3,7 @@
 use tauri::State;
 
 use crate::dto::GenerateImageRequest;
+use crate::identity::service::QuotaResult;
 use crate::state::AppState;
 
 /// Generates an image using the configured provider.
@@ -12,6 +13,26 @@ pub async fn generate_image(
     state: State<'_, AppState>,
     request: GenerateImageRequest,
 ) -> Result<String, String> {
+    // Check and increment quota for Free tier users
+    match state
+        .identity_service
+        .check_and_increment_quota("image_generate")
+        .await
+        .map_err(|e| e.to_string())?
+    {
+        QuotaResult::Exceeded { limit, period } => {
+            return Err(format!(
+                "Monthly image generation quota exceeded ({} / {}). Resets on {}.",
+                limit,
+                limit,
+                period
+            ));
+        }
+        QuotaResult::Allow { .. } => {
+            // Proceed with generation
+        }
+    }
+
     // Build operation JSON from request params
     let operation = serde_json::json!({
         "prompt": request.prompt,

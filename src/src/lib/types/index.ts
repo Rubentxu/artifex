@@ -29,3 +29,32 @@ export interface JobResponse {
   created_at: string;
   updated_at: string;
 }
+
+// Identity types
+export type Tier = 'free' | 'pro';
+
+export interface UserProfileDto {
+  id: string;
+  display_name: string;
+  email: string | null;
+  avatar_path: string | null;
+  tier: Tier;
+  license_key: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface UsageEntry {
+  operation_type: string;
+  period: string;
+  count: number;
+  limit: number;
+  remaining: number;
+}
+
+export interface QuotaResult {
+  allowed: boolean;
+  remaining: number;
+  limit: number;
+  period: string;
+}

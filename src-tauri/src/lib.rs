@@ -7,6 +7,7 @@ pub mod bootstrap;
 pub mod commands;
 pub mod db;
 pub mod dto;
+pub mod identity;
 pub mod model_config;
 pub mod repositories;
 pub mod state;
@@ -24,6 +25,7 @@ use commands::{
     pack_atlas, register_asset, remove_background, rename_project, render_3d_to_sprites, slice_sprite_sheet, synthesize_speech,
     update_animation,
 };
+use identity::commands::{check_quota, get_current_user, get_usage, set_tier, update_profile};
 use model_config::{
     list_model_profiles, create_model_profile, update_model_profile, delete_model_profile,
     list_routing_rules, set_routing_rule, list_prompt_templates, create_prompt_template,
@@ -107,6 +109,12 @@ pub fn run_app() {
             get_credential_status,
             set_credential,
             delete_credential,
+            // Identity commands
+            get_current_user,
+            update_profile,
+            set_tier,
+            get_usage,
+            check_quota,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -17,6 +17,8 @@
     type RoutingRuleDto,
     type PromptTemplateDto,
   } from '$lib/api/model-config';
+  import { identityStore } from '$lib/stores/identity';
+  import type { UsageEntry } from '$lib/types';
 
   let providers = $state<ProviderDto[]>([]);
   let profiles = $state<ModelProfileDto[]>([]);
@@ -25,6 +27,12 @@
 
   let loading = $state(true);
   let error = $state<string | null>(null);
+
+  // Profile form state
+  let profileDisplayName = $state('');
+  let profileEmail = $state('');
+  let profileSaving = $state(false);
+  let profileSaveSuccess = $state(false);
 
   // Track which providers have credentials configured (actual credential status from API)
   let configuredProviders = $state<Set<string>>(new Set());
@@ -38,6 +46,13 @@
 
   onMount(async () => {
     await loadData();
+    await identityStore.loadIdentity();
+    await identityStore.loadUsage();
+    // Initialize profile form from store
+    if ($identityStore.user) {
+      profileDisplayName = $identityStore.user.display_name;
+      profileEmail = $identityStore.user.email || '';
+    }
   });
 
   async function loadData() {
@@ -70,6 +85,20 @@
       error = e instanceof Error ? e.message : String(e);
     } finally {
       loading = false;
+    }
+  }
+
+  async function handleProfileSave() {
+    profileSaving = true;
+    profileSaveSuccess = false;
+    try {
+      await identityStore.updateProfile(profileDisplayName, profileEmail || null, null);
+      profileSaveSuccess = true;
+      setTimeout(() => profileSaveSuccess = false, 3000);
+    } catch (e) {
+      error = e instanceof Error ? e.message : String(e);
+    } finally {
+      profileSaving = false;
     }
   }
 
@@ -118,6 +147,22 @@
       error = e instanceof Error ? e.message : String(e);
     }
   }
+
+  function getUsageForOperation(usage: UsageEntry[], operation: string): UsageEntry | undefined {
+    const currentPeriod = new Date().toISOString().slice(0, 7); // YYYY-MM
+    return usage.find(u => u.operation_type === operation && u.period === currentPeriod);
+  }
+
+  function getUsagePercentage(usage: UsageEntry): number {
+    if (usage.limit === 0 || usage.limit === 2147483647) return 0;
+    return Math.min(100, (usage.count / usage.limit) * 100);
+  }
+
+  function getNextResetDate(): string {
+    const now = new Date();
+    const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+    return nextMonth.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+  }
 </script>
 
 <div class="h-full flex flex-col overflow-hidden">
@@ -144,6 +189,127 @@
       </div>
     {:else}
       <div class="max-w-4xl space-y-8">
+        <!-- Profile Section -->
+        <section class="p-6 bg-[var(--color-panel)] rounded-xl space-y-4">
+          <h3 class="text-lg font-semibold text-[var(--color-text)]">Profile</h3>
+          <div class="grid gap-4 md:grid-cols-2">
+            <div class="space-y-2">
+              <label for="displayName" class="text-sm font-medium text-[var(--color-text)]">Display Name</label>
+              <input
+                id="displayName"
+                type="text"
+                bind:value={profileDisplayName}
+                class="w-full px-3 py-2 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
+              />
+            </div>
+            <div class="space-y-2">
+              <label for="email" class="text-sm font-medium text-[var(--color-text)]">Email</label>
+              <input
+                id="email"
+                type="email"
+                bind:value={profileEmail}
+                class="w-full px-3 py-2 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
+              />
+            </div>
+          </div>
+          <div class="flex items-center gap-4">
+            <button
+              onclick={handleProfileSave}
+              disabled={profileSaving}
+              class="px-4 py-2 bg-[var(--color-accent)] hover:bg-[var(--color-accent)]/80 disabled:opacity-50 rounded-lg transition-colors font-medium"
+            >
+              {profileSaving ? 'Saving...' : 'Save Profile'}
+            </button>
+            {#if profileSaveSuccess}
+              <span class="text-green-400 text-sm">Profile saved!</span>
+            {/if}
+          </div>
+        </section>
+
+        <!-- Tier & License Section -->
+        <section class="p-6 bg-[var(--color-panel)] rounded-xl space-y-4">
+          <h3 class="text-lg font-semibold text-[var(--color-text)]">Tier & License</h3>
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-4">
+              <div class="px-4 py-2 rounded-lg font-bold text-sm uppercase
+                {$identityStore.tier === 'pro'
+                  ? 'bg-purple-500/20 text-purple-400 border border-purple-500/50'
+                  : 'bg-gray-500/20 text-gray-400 border border-gray-500/50'
+                }">
+                {$identityStore.tier}
+              </div>
+              <div>
+                <p class="text-sm text-[var(--color-text)]">
+                  {$identityStore.tier === 'pro' ? 'Pro Tier - All features unlocked' : 'Free Tier - Limited features'}
+                </p>
+              </div>
+            </div>
+            {#if $identityStore.tier !== 'pro'}
+              <a
+                href="https://artifex.example.com/upgrade"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="px-4 py-2 bg-purple-500 hover:bg-purple-400 rounded-lg transition-colors font-medium text-white"
+              >
+                Upgrade to Pro
+              </a>
+            {/if}
+          </div>
+        </section>
+
+        <!-- Usage Stats Section -->
+        <section class="p-6 bg-[var(--color-panel)] rounded-xl space-y-4">
+          <h3 class="text-lg font-semibold text-[var(--color-text)]">Usage Stats</h3>
+          <div class="space-y-4">
+            {#if $identityStore.tier === 'pro'}
+              <div class="flex items-center gap-2 text-purple-400">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+                <span>Unlimited usage on Pro tier</span>
+              </div>
+            {:else}
+              <!-- Image Generation -->
+              {@const imageUsage = getUsageForOperation($identityStore.usage, 'image_generate')}
+              <div class="space-y-2">
+                <div class="flex justify-between text-sm">
+                  <span class="text-[var(--color-text)]">Image Generation</span>
+                  <span class="text-[var(--color-text-muted)]">
+                    {imageUsage ? `${imageUsage.count} / ${imageUsage.limit}` : '0 / 50'} this month
+                  </span>
+                </div>
+                <div class="w-full h-2 bg-[var(--color-surface)] rounded-full overflow-hidden">
+                  <div
+                    class="h-full bg-blue-500 transition-all duration-300"
+                    style="width: {imageUsage ? getUsagePercentage(imageUsage) : 0}%"
+                  ></div>
+                </div>
+              </div>
+
+              <!-- Audio Generation -->
+              {@const audioUsage = getUsageForOperation($identityStore.usage, 'audio_generate')}
+              <div class="space-y-2">
+                <div class="flex justify-between text-sm">
+                  <span class="text-[var(--color-text)]">Audio Generation</span>
+                  <span class="text-[var(--color-text-muted)]">
+                    {audioUsage ? `${audioUsage.count} / ${audioUsage.limit}` : '0 / 20'} this month
+                  </span>
+                </div>
+                <div class="w-full h-2 bg-[var(--color-surface)] rounded-full overflow-hidden">
+                  <div
+                    class="h-full bg-green-500 transition-all duration-300"
+                    style="width: {audioUsage ? getUsagePercentage(audioUsage) : 0}%"
+                  ></div>
+                </div>
+              </div>
+
+              <p class="text-xs text-[var(--color-text-muted)]">
+                Resets on {getNextResetDate()}
+              </p>
+            {/if}
+          </div>
+        </section>
+
         <!-- Providers Section -->
         <section class="p-6 bg-[var(--color-panel)] rounded-xl">
           <ProviderList {providers} onToggle={handleProviderToggle} />

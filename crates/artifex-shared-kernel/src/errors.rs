@@ -29,6 +29,18 @@ pub enum ArtifexError {
 
     #[error("Internal error: {0}")]
     Internal(String),
+
+    /// User attempted a Pro-only feature on Free tier.
+    #[error("Pro tier required for: {feature}")]
+    TierRequired { feature: String },
+
+    /// User exceeded their monthly quota for a feature.
+    #[error("Quota exceeded for {operation}: {limit}/{limit} {period}")]
+    QuotaExceeded {
+        operation: String,
+        limit: u32,
+        period: String,
+    },
 }
 
 impl ArtifexError {
@@ -61,6 +73,8 @@ impl DomainError for ArtifexError {
             Self::DuplicateName(_) => "DUPLICATE_NAME",
             Self::IoError(_) => "IO_ERROR",
             Self::Internal(_) => "INTERNAL_ERROR",
+            Self::TierRequired { .. } => "TIER_REQUIRED",
+            Self::QuotaExceeded { .. } => "QUOTA_EXCEEDED",
         }
     }
 }

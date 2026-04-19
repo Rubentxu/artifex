@@ -57,6 +57,16 @@ pub async fn export_project(
     state: tauri::State<'_, AppState>,
     request: ExportProjectRequest,
 ) -> Result<ExportProjectResponse, String> {
+    // Check tier - Pro required for publishing
+    let tier = state
+        .identity_service
+        .get_tier()
+        .await
+        .map_err(|e| e.to_string())?;
+    if !tier.is_pro() {
+        return Err("Pro tier required for publishing".to_string());
+    }
+
     let project_id = &request.project_id;
 
     // Load project info

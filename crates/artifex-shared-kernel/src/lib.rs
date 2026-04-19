@@ -11,6 +11,6 @@ pub mod time;
 // Re-export all public types for convenient access
 pub use errors::{is_unique_violation, AppError, ArtifexError, DomainError};
 pub use events::DomainEvent;
-pub use ids::{AssetId, AssetVersionId, JobId, ProjectId};
+pub use ids::{AssetId, AssetVersionId, JobId, ProjectId, Tier, UserId};
 pub use paths::ProjectPath;
 pub use time::Timestamp;

@@ -12,6 +12,16 @@ pub async fn generate_quick_sprites(
     state: State<'_, AppState>,
     request: QuickSpritesRequest,
 ) -> Result<String, String> {
+    // Check tier - Pro required for quick sprites
+    let tier = state
+        .identity_service
+        .get_tier()
+        .await
+        .map_err(|e| e.to_string())?;
+    if !tier.is_pro() {
+        return Err("Pro tier required for quick sprites generation".to_string());
+    }
+
     // Validate based on mode and extract source file path
     let source_file_path = match request.mode {
         QuickSpritesMode::FromImage => {

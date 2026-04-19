@@ -3,6 +3,7 @@
 use std::sync::{Arc, Mutex};
 
 use crate::application::{AssetApplicationService, JobApplicationService, ProjectApplicationService};
+use crate::identity::service::IdentityService;
 use crate::model_config::ModelConfigService;
 use crate::state::AppState;
 use crate::workers::WorkerRunner;
@@ -14,6 +15,7 @@ pub fn create_app_state(
     asset_service: Arc<AssetApplicationService>,
     worker_runner: WorkerRunner,
     model_config_service: Arc<ModelConfigService>,
+    identity_service: Arc<IdentityService>,
 ) -> AppState {
     let runner_handle = Arc::new(Mutex::new(Some(worker_runner)));
 
@@ -24,5 +26,6 @@ pub fn create_app_state(
         Mutex::new(None),
         runner_handle,
         model_config_service,
+        identity_service,
     )
 }

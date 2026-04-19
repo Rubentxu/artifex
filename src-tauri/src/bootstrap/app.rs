@@ -1,21 +1,16 @@
 //! Application setup helpers.
 
-use std::path::PathBuf;
-use std::sync::Mutex;
-
 use tauri::Manager;
 
-use crate::application::{AssetApplicationService, JobApplicationService, ProjectApplicationService};
 use crate::bootstrap::database::init_database;
+use crate::bootstrap::identity::create_identity_service;
 use crate::bootstrap::model_config::seed_model_config;
 use crate::bootstrap::repositories::create_repositories;
 use crate::bootstrap::services::create_services;
 use crate::bootstrap::model_config::create_model_config;
 use crate::bootstrap::workers::create_workers;
 use crate::bootstrap::state::create_app_state;
-use crate::model_config::ModelConfigService;
 use crate::state::AppState;
-use crate::workers::WorkerRunner;
 
 /// Initializes the application with all state and workers set up.
 pub fn setup_app(app: &tauri::App) -> Result<AppState, String> {
@@ -47,6 +42,9 @@ pub fn setup_app(app: &tauri::App) -> Result<AppState, String> {
     // Seed default model profiles and routing rules
     seed_model_config(&model_config_service);
 
+    // Create identity service
+    let identity_service = create_identity_service(&pool)?;
+
     // Create worker infrastructure
     let assets_dir = app_dir.join("artifex-assets").to_string_lossy().to_string();
     let worker_runner = create_workers(
@@ -65,6 +63,7 @@ pub fn setup_app(app: &tauri::App) -> Result<AppState, String> {
         asset_service,
         worker_runner,
         model_config_service,
+        identity_service,
     );
 
     Ok(app_state)

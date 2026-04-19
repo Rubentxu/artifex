@@ -16,6 +16,16 @@ pub async fn generate_code(
     state: State<'_, AppState>,
     request: GenerateCodeRequest,
 ) -> Result<String, String> {
+    // Check tier - Pro required for code generation
+    let tier = state
+        .identity_service
+        .get_tier()
+        .await
+        .map_err(|e| e.to_string())?;
+    if !tier.is_pro() {
+        return Err("Pro tier required for code generation".to_string());
+    }
+
     // Validate that the project exists
     let _project = state
         .project_service

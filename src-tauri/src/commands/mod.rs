@@ -23,6 +23,9 @@ pub mod slice_sprite_sheet;
 pub mod texture;
 pub mod video_gen;
 
+// Re-export identity commands from identity module
+pub use crate::identity::commands::{check_quota, get_current_user, get_usage, set_tier, update_profile};
+
 pub use animations::{create_animation, delete_animation, export_animation, get_animation, list_animations, update_animation};
 pub use atlas::pack_atlas;
 pub use assets::{delete_asset, get_asset, import_asset, list_assets, register_asset};
