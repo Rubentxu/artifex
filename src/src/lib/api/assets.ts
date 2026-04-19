@@ -1,6 +1,6 @@
 import type { StorageBackend } from './storage-backend';
 import { TauriBackend } from './tauri-backend';
-import type { AssetResponse, ImportAssetRequest, GenerateImageRequest, GenerateAudioRequest, GenerateTtsRequest, RemoveBackgroundRequest, ConvertPixelArtRequest, GenerateTileRequest, GenerateSpriteSheetRequest, SliceSpriteSheetRequest, GenerateCodeRequest, InpaintRequest, OutpaintRequest, GenerateMaterialRequest, AnimationResponse, CreateAnimationRequest, UpdateAnimationRequest, ExportAnimationRequest, PackAtlasRequest, SeamlessTextureRequest, GenerateVideoRequest, QuickSpritesRequest, ExportProjectRequest, ExportProjectResponse, Render3dRequest } from '$lib/types/asset';
+import type { AssetResponse, ImportAssetRequest, GenerateImageRequest, GenerateAudioRequest, GenerateTtsRequest, RemoveBackgroundRequest, ConvertPixelArtRequest, GenerateTileRequest, GenerateSpriteSheetRequest, SliceSpriteSheetRequest, GenerateCodeRequest, InpaintRequest, OutpaintRequest, GenerateMaterialRequest, AnimationResponse, CreateAnimationRequest, UpdateAnimationRequest, ExportAnimationRequest, PackAtlasRequest, SeamlessTextureRequest, GenerateVideoRequest, QuickSpritesRequest, ExportProjectRequest, ExportProjectResponse, Render3dRequest, CollectionResponse, TagAssetRequest, CollectionCreateRequest, AddToCollectionRequest, AssetLineageResponse } from '$lib/types/asset';
 
 let backend: StorageBackend;
 export function setBackend(b: StorageBackend): void {
@@ -152,4 +152,36 @@ export async function openItchIo(): Promise<void> {
 export async function render3dToSprites(request: Render3dRequest): Promise<string> {
   // Returns job_id
   return getBackend().invoke<string>('render_3d_to_sprites', { request });
+}
+
+export async function tagAsset(request: TagAssetRequest): Promise<AssetResponse> {
+  return getBackend().invoke<AssetResponse>('tag_asset', { request });
+}
+
+export async function untagAsset(request: { asset_id: string; tag: string }): Promise<AssetResponse> {
+  return getBackend().invoke<AssetResponse>('untag_asset', { request });
+}
+
+export async function createCollection(request: CollectionCreateRequest): Promise<CollectionResponse> {
+  return getBackend().invoke<CollectionResponse>('create_collection', { request });
+}
+
+export async function listCollections(projectId: string): Promise<CollectionResponse[]> {
+  return getBackend().invoke<CollectionResponse[]>('list_collections', { projectId });
+}
+
+export async function deleteCollection(collectionId: string): Promise<void> {
+  return getBackend().invoke<void>('delete_collection', { collectionId });
+}
+
+export async function addToCollection(request: AddToCollectionRequest): Promise<AssetResponse> {
+  return getBackend().invoke<AssetResponse>('add_to_collection', { request });
+}
+
+export async function removeFromCollection(assetId: string): Promise<AssetResponse> {
+  return getBackend().invoke<AssetResponse>('remove_from_collection', { assetId });
+}
+
+export async function getAssetLineage(assetId: string): Promise<AssetLineageResponse> {
+  return getBackend().invoke<AssetLineageResponse>('get_asset_lineage', { assetId });
 }

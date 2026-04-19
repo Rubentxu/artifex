@@ -6,7 +6,7 @@
 use std::path::Path;
 use std::sync::Arc;
 
-use artifex_asset_management::{Asset, AssetKind, AssetRepository};
+use artifex_asset_management::{Asset, AssetKind, AssetRepository, Collection};
 use artifex_shared_kernel::{ArtifexError, AssetId, ProjectId};
 
 use super::audio_metadata::extract_audio_metadata;
@@ -237,6 +237,176 @@ impl AssetApplicationService {
                 file_meta.sample_rate,
                 file_meta.format
             );
+        }
+        asset.metadata = Some(merged_metadata);
+
+        // For image assets, try to get dimensions
+        if asset_kind == AssetKind::Image {
+            if let Ok((width, height)) = get_image_dimensions(path).await {
+                asset.width = Some(width);
+                asset.height = Some(height);
+            }
+        }
+
+        self.repo.create(&asset).await
+    }
+
+    /// Tags an asset with a new tag.
+    pub async fn tag_asset(&self, asset_id: &str, tag: &str) -> Result<Asset, ArtifexError> {
+        let asset = self.get_asset(asset_id).await?;
+        
+        let tag = tag.trim();
+        if tag.is_empty() {
+            return Err(ArtifexError::validation("Tag cannot be empty"));
+        }
+        
+        if asset.tags.contains(&tag.to_string()) {
+            return Err(ArtifexError::validation("Tag already exists"));
+        }
+        
+        let mut tags = asset.tags;
+        tags.push(tag.to_string());
+        self.repo.update_tags(&asset.id, &tags).await?;
+        
+        self.get_asset(asset_id).await
+    }
+
+    /// Removes a tag from an asset.
+    pub async fn untag_asset(&self, asset_id: &str, tag: &str) -> Result<Asset, ArtifexError> {
+        let asset = self.get_asset(asset_id).await?;
+        
+        let original_len = asset.tags.len();
+        let tags: Vec<String> = asset.tags.into_iter().filter(|t| t != tag).collect();
+        
+        if tags.len() == original_len {
+            return Err(ArtifexError::validation("Tag not found"));
+        }
+        
+        self.repo.update_tags(&asset.id, &tags).await?;
+        self.get_asset(asset_id).await
+    }
+
+    /// Creates a new collection.
+    pub async fn create_collection(&self, project_id: &str, name: &str) -> Result<Collection, ArtifexError> {
+        let name = name.trim();
+        if name.is_empty() {
+            return Err(ArtifexError::validation("Collection name cannot be empty"));
+        }
+        
+        let pid = parse_project_id(project_id)?;
+        Ok(Collection::new(pid, name))
+    }
+
+    /// Lists all collections for a project.
+    pub async fn list_collections(&self, _project_id: &str) -> Result<Vec<Collection>, ArtifexError> {
+        // Stub implementation - returns empty for now
+        // Collection persistence would require a CollectionRepository
+        Ok(Vec::new())
+    }
+
+    /// Deletes a collection.
+    pub async fn delete_collection(&self, _collection_id: &str) -> Result<(), ArtifexError> {
+        // Stub implementation
+        // Would need to: 1) clear collection_id on all assets in collection, 2) delete collection
+        Ok(())
+    }
+
+    /// Adds an asset to a collection.
+    pub async fn add_to_collection(&self, asset_id: &str, collection_id: &str) -> Result<Asset, ArtifexError> {
+        let asset = self.get_asset(asset_id).await?;
+        self.repo.update_collection(&asset.id, Some(collection_id)).await?;
+        self.get_asset(asset_id).await
+    }
+
+    /// Removes an asset from its collection.
+    pub async fn remove_from_collection(&self, asset_id: &str) -> Result<Asset, ArtifexError> {
+        let asset = self.get_asset(asset_id).await?;
+        self.repo.update_collection(&asset.id, None).await?;
+        self.get_asset(asset_id).await
+    }
+
+    /// Gets the lineage chain for an asset.
+    pub async fn get_asset_lineage(&self, asset_id: &str) -> Result<Vec<Asset>, ArtifexError> {
+        let mut chain = Vec::new();
+        let mut current_id = Some(asset_id.to_string());
+
+        let mut visited = std::collections::HashSet::new();
+
+        while let Some(id) = current_id {
+            // Prevent infinite loops
+            if visited.contains(&id) {
+                break;
+            }
+            visited.insert(id.clone());
+
+            match self.get_asset(&id).await {
+                Ok(asset) => {
+                    chain.push(asset.clone());
+                    current_id = asset.derived_from_asset_id.clone();
+                }
+                Err(_) => break,
+            }
+        }
+
+        Ok(chain)
+    }
+
+    /// Registers an already-saved file as an asset with lineage tracking.
+    ///
+    /// This is used when a worker has already saved a file and needs to register it
+    /// with knowledge of its source asset.
+    pub async fn register_asset_with_lineage(
+        &self,
+        project_id: &str,
+        name: &str,
+        kind: &str,
+        file_path: &str,
+        metadata: Option<serde_json::Value>,
+        derived_from_asset_id: Option<&str>,
+    ) -> Result<Asset, ArtifexError> {
+        let pid = parse_project_id(project_id)?;
+        let asset_kind = parse_asset_kind(kind)?;
+
+        // Validate file path exists
+        let path = Path::new(file_path);
+        if !path.exists() {
+            return Err(ArtifexError::validation(format!(
+                "File does not exist: {}",
+                file_path
+            )));
+        }
+
+        // Get file metadata
+        let meta = tokio::fs::metadata(file_path)
+            .await
+            .map_err(|e| ArtifexError::IoError(e.to_string()))?;
+
+        let mut asset = Asset::register(pid, name, asset_kind.clone())
+            .map_err(ArtifexError::validation)?;
+        asset.file_path = Some(file_path.to_string());
+        asset.file_size = Some(meta.len());
+        asset.import_source = "generated".to_string();
+
+        // Set lineage if provided
+        if let Some(source_id) = derived_from_asset_id {
+            asset.derived_from_asset_id = Some(source_id.to_string());
+        }
+
+        // Merge provided metadata with audio metadata (file-based preferred for audio)
+        let mut merged_metadata = metadata.unwrap_or(serde_json::json!({}));
+        if matches!(asset_kind, AssetKind::Audio | AssetKind::Voice) {
+            let file_meta = extract_audio_metadata(path);
+            if let Some(obj) = merged_metadata.as_object_mut() {
+                if let Some(d) = file_meta.duration_secs {
+                    obj.insert("duration_secs".to_string(), serde_json::json!(d));
+                }
+                if let Some(sr) = file_meta.sample_rate {
+                    obj.insert("sample_rate".to_string(), serde_json::json!(sr));
+                }
+                if let Some(ref f) = file_meta.format {
+                    obj.insert("format".to_string(), serde_json::json!(f));
+                }
+            }
         }
         asset.metadata = Some(merged_metadata);
 

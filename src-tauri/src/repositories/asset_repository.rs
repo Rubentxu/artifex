@@ -26,6 +26,7 @@ struct AssetRow {
     tags: Option<String>,
     import_source: Option<String>,
     collection_id: Option<String>,
+    derived_from_asset_id: Option<String>,
 }
 
 /// SQLite-backed asset repository.
@@ -48,11 +49,12 @@ impl AssetRepository for SqliteAssetRepository {
             .as_ref()
             .map(|m| serde_json::to_string(m).unwrap_or_else(|_| "{}".to_string()));
 
+        let tags_json = serde_json::to_string(&asset.tags).unwrap_or_else(|_| "[]".to_string());
         let now = Timestamp::now();
         let result = sqlx::query(
             r#"INSERT INTO assets (id, project_id, name, kind, file_path, metadata, file_size, width, height, created_at, updated_at,
-                                     tags, import_source, collection_id)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"#,
+                                     tags, import_source, collection_id, derived_from_asset_id)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"#,
         )
         .bind(asset.id.into_uuid().to_string())
         .bind(asset.project_id.into_uuid().to_string())
@@ -65,10 +67,11 @@ impl AssetRepository for SqliteAssetRepository {
         .bind(asset.height.map(|h| h as i32))
         .bind(asset.created_at.to_string())
         .bind(now.to_string())
-        // Dual-write new columns
-        .bind("[]") // tags - default empty array
-        .bind("uploaded") // import_source - default
-        .bind(Option::<String>::None) // collection_id - null initially
+        // Use actual asset values for new columns
+        .bind(&tags_json)
+        .bind(&asset.import_source)
+        .bind(&asset.collection_id)
+        .bind(&asset.derived_from_asset_id)
         .execute(&self.pool)
         .await;
 
@@ -87,7 +90,7 @@ impl AssetRepository for SqliteAssetRepository {
     async fn find_by_id(&self, id: &AssetId) -> Result<Option<Asset>, ArtifexError> {
         let row: Option<AssetRow> = sqlx::query_as(
             r#"SELECT id, project_id, name, kind, file_path, metadata, file_size, width, height, created_at, updated_at,
-                      tags, import_source, collection_id
+                      tags, import_source, collection_id, derived_from_asset_id
                FROM assets WHERE id = ?"#,
         )
         .bind(id.into_uuid().to_string())
@@ -101,7 +104,7 @@ impl AssetRepository for SqliteAssetRepository {
     async fn find_by_project(&self, project_id: &ProjectId) -> Result<Vec<Asset>, ArtifexError> {
         let rows: Vec<AssetRow> = sqlx::query_as(
             r#"SELECT id, project_id, name, kind, file_path, metadata, file_size, width, height, created_at, updated_at,
-                      tags, import_source, collection_id
+                      tags, import_source, collection_id, derived_from_asset_id
                FROM assets WHERE project_id = ? ORDER BY created_at DESC"#,
         )
         .bind(project_id.into_uuid().to_string())
@@ -123,7 +126,7 @@ impl AssetRepository for SqliteAssetRepository {
     ) -> Result<Vec<Asset>, ArtifexError> {
         let rows: Vec<AssetRow> = sqlx::query_as(
             r#"SELECT id, project_id, name, kind, file_path, metadata, file_size, width, height, created_at, updated_at,
-                      tags, import_source, collection_id
+                      tags, import_source, collection_id, derived_from_asset_id
                FROM assets WHERE project_id = ? AND kind = ? ORDER BY created_at DESC"#,
         )
         .bind(project_id.into_uuid().to_string())
@@ -153,6 +156,86 @@ impl AssetRepository for SqliteAssetRepository {
             Err(e) => Err(ArtifexError::IoError(e.to_string())),
         }
     }
+
+    async fn find_by_tag(
+        &self,
+        project_id: &ProjectId,
+        tag: &str,
+    ) -> Result<Vec<Asset>, ArtifexError> {
+        // Search for assets where tags JSON contains the specified tag
+        let rows: Vec<AssetRow> = sqlx::query_as(
+            r#"SELECT id, project_id, name, kind, file_path, metadata, file_size, width, height, created_at, updated_at,
+                      tags, import_source, collection_id, derived_from_asset_id
+               FROM assets 
+               WHERE project_id = ? AND tags LIKE ?
+               ORDER BY created_at DESC"#,
+        )
+        .bind(project_id.into_uuid().to_string())
+        .bind(format!("%\"{}%", tag))
+        .fetch_all(&self.pool)
+        .await
+        .map_err(|e| ArtifexError::IoError(e.to_string()))?;
+
+        let mut assets = Vec::with_capacity(rows.len());
+        for row in rows {
+            assets.push(row_to_asset(&row)?);
+        }
+        Ok(assets)
+    }
+
+    async fn find_by_collection(
+        &self,
+        project_id: &ProjectId,
+        collection_id: &str,
+    ) -> Result<Vec<Asset>, ArtifexError> {
+        let rows: Vec<AssetRow> = sqlx::query_as(
+            r#"SELECT id, project_id, name, kind, file_path, metadata, file_size, width, height, created_at, updated_at,
+                      tags, import_source, collection_id, derived_from_asset_id
+               FROM assets 
+               WHERE project_id = ? AND collection_id = ?
+               ORDER BY created_at DESC"#,
+        )
+        .bind(project_id.into_uuid().to_string())
+        .bind(collection_id)
+        .fetch_all(&self.pool)
+        .await
+        .map_err(|e| ArtifexError::IoError(e.to_string()))?;
+
+        let mut assets = Vec::with_capacity(rows.len());
+        for row in rows {
+            assets.push(row_to_asset(&row)?);
+        }
+        Ok(assets)
+    }
+
+    async fn update_tags(&self, id: &AssetId, tags: &[String]) -> Result<(), ArtifexError> {
+        let tags_json = serde_json::to_string(tags)
+            .map_err(|e| ArtifexError::ValidationError(e.to_string()))?;
+        
+        sqlx::query("UPDATE assets SET tags = ? WHERE id = ?")
+            .bind(&tags_json)
+            .bind(id.into_uuid().to_string())
+            .execute(&self.pool)
+            .await
+            .map_err(|e| ArtifexError::IoError(e.to_string()))?;
+        
+        Ok(())
+    }
+
+    async fn update_collection(
+        &self,
+        id: &AssetId,
+        collection_id: Option<&str>,
+    ) -> Result<(), ArtifexError> {
+        sqlx::query("UPDATE assets SET collection_id = ? WHERE id = ?")
+            .bind(collection_id)
+            .bind(id.into_uuid().to_string())
+            .execute(&self.pool)
+            .await
+            .map_err(|e| ArtifexError::IoError(e.to_string()))?;
+        
+        Ok(())
+    }
 }
 
 /// Converts a database row to an Asset domain object.
@@ -176,6 +259,15 @@ fn row_to_asset(row: &AssetRow) -> Result<Asset, ArtifexError> {
 
     let created_at = parse_rfc3339(&row.created_at)?;
 
+    // Parse tags from JSON array
+    let tags: Vec<String> = row.tags
+        .as_ref()
+        .and_then(|t| serde_json::from_str(t).ok())
+        .unwrap_or_default();
+
+    // Use import_source or default to "uploaded"
+    let import_source = row.import_source.clone().unwrap_or_else(|| "uploaded".to_string());
+
     Ok(Asset {
         id,
         project_id,
@@ -187,6 +279,10 @@ fn row_to_asset(row: &AssetRow) -> Result<Asset, ArtifexError> {
         width: row.width.map(|w| w as u32),
         height: row.height.map(|h| h as u32),
         created_at,
+        tags,
+        import_source,
+        collection_id: row.collection_id.clone(),
+        derived_from_asset_id: row.derived_from_asset_id.clone(),
     })
 }
 
@@ -218,6 +314,7 @@ mod tests {
             tags: Some("[]".to_string()),
             import_source: Some("uploaded".to_string()),
             collection_id: None,
+            derived_from_asset_id: None,
         };
 
         let asset = row_to_asset(&row).unwrap();
@@ -246,6 +343,7 @@ mod tests {
             tags: Some("[]".to_string()),
             import_source: Some("uploaded".to_string()),
             collection_id: None,
+            derived_from_asset_id: None,
         };
 
         let asset = row_to_asset(&row).unwrap();
@@ -273,6 +371,7 @@ mod tests {
             tags: Some("[]".to_string()),
             import_source: Some("uploaded".to_string()),
             collection_id: None,
+            derived_from_asset_id: None,
         };
 
         let result = row_to_asset(&row);

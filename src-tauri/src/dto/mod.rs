@@ -22,7 +22,11 @@ pub mod renderer_3d;
 // Re-export all types for backwards compatibility
 pub use projects::{CreateProjectRequest, ProjectResponse};
 pub use jobs::{CreateJobRequest, JobResponse};
-pub use assets::{AssetResponse, ImportAssetRequest, RegisterAssetRequest};
+pub use assets::{
+    AddToCollectionRequest, AssetLineageResponse, AssetResponse, CollectionCreateRequest,
+    CollectionResponse, ImportAssetRequest, RegisterAssetRequest, TagAssetRequest,
+    UntagAssetRequest,
+};
 pub use image_gen::GenerateImageRequest;
 pub use video::GenerateVideoRequest;
 pub use audio::{GenerateAudioRequest, GenerateTtsRequest, AudioGenParamsDto, TtsParamsDto};

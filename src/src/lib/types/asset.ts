@@ -42,6 +42,36 @@ export interface AssetResponse {
   duration_secs?: number | null;
   sample_rate?: number | null;
   created_at: string;
+  tags: string[];
+  import_source: string;
+  collection_id: string | null;
+  derived_from: string | null;
+}
+
+export interface CollectionResponse {
+  id: string;
+  project_id: string;
+  name: string;
+  created_at: string;
+}
+
+export interface TagAssetRequest {
+  asset_id: string;
+  tag: string;
+}
+
+export interface CollectionCreateRequest {
+  project_id: string;
+  name: string;
+}
+
+export interface AddToCollectionRequest {
+  asset_id: string;
+  collection_id: string;
+}
+
+export interface AssetLineageResponse {
+  chain: AssetResponse[];
 }
 
 export interface ImportAssetRequest {

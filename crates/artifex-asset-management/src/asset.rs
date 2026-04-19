@@ -180,6 +180,18 @@ pub struct Asset {
     pub height: Option<u32>,
     /// When the asset was created.
     pub created_at: Timestamp,
+    /// Tags for organization.
+    #[serde(default)]
+    pub tags: Vec<String>,
+    /// Source of import (e.g., "uploaded", "generated").
+    #[serde(default)]
+    pub import_source: String,
+    /// Collection this asset belongs to.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub collection_id: Option<String>,
+    /// Parent asset ID if this asset was derived from another.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub derived_from_asset_id: Option<String>,
 }
 
 impl Asset {
@@ -198,6 +210,10 @@ impl Asset {
             width: None,
             height: None,
             created_at: Timestamp::now(),
+            tags: Vec::new(),
+            import_source: "uploaded".to_string(),
+            collection_id: None,
+            derived_from_asset_id: None,
         }
     }
 
@@ -240,6 +256,10 @@ impl Asset {
             width: Some(width),
             height: Some(height),
             created_at: Timestamp::now(),
+            tags: Vec::new(),
+            import_source: "uploaded".to_string(),
+            collection_id: None,
+            derived_from_asset_id: None,
         }
     }
 
@@ -265,6 +285,30 @@ impl Asset {
     pub fn with_dimensions(mut self, width: u32, height: u32) -> Self {
         self.width = Some(width);
         self.height = Some(height);
+        self
+    }
+
+    /// Sets the tags for the asset.
+    pub fn with_tags(mut self, tags: Vec<String>) -> Self {
+        self.tags = tags;
+        self
+    }
+
+    /// Sets the import source for the asset.
+    pub fn with_import_source(mut self, source: String) -> Self {
+        self.import_source = source;
+        self
+    }
+
+    /// Sets the collection ID for the asset.
+    pub fn with_collection_id(mut self, collection_id: Option<String>) -> Self {
+        self.collection_id = collection_id;
+        self
+    }
+
+    /// Sets the derived_from_asset_id for the asset.
+    pub fn with_derived_from(mut self, derived_from: Option<String>) -> Self {
+        self.derived_from_asset_id = derived_from;
         self
     }
 }

@@ -4,7 +4,11 @@ use tauri::State;
 
 use artifex_asset_management::Asset;
 
-use crate::dto::{AssetResponse, ImportAssetRequest, RegisterAssetRequest};
+use crate::dto::{
+    AddToCollectionRequest, AssetLineageResponse, AssetResponse, CollectionCreateRequest,
+    CollectionResponse, ImportAssetRequest, RegisterAssetRequest, TagAssetRequest,
+    UntagAssetRequest,
+};
 use crate::state::AppState;
 
 /// Converts a domain Asset to an AssetResponse DTO.
@@ -37,6 +41,10 @@ pub fn asset_to_response(asset: &Asset) -> AssetResponse {
         duration_secs,
         sample_rate,
         created_at: asset.created_at.to_string(),
+        tags: asset.tags.clone(),
+        import_source: asset.import_source.clone(),
+        collection_id: asset.collection_id.clone(),
+        derived_from: asset.derived_from_asset_id.clone(),
     }
 }
 
@@ -111,4 +119,137 @@ pub async fn register_asset(
         .map_err(|e| e.to_string())?;
 
     Ok(asset_to_response(&asset))
+}
+
+/// Tags an asset with a new tag.
+#[tauri::command]
+pub async fn tag_asset(
+    state: State<'_, AppState>,
+    request: TagAssetRequest,
+) -> Result<AssetResponse, String> {
+    let asset = state
+        .asset_service
+        .tag_asset(&request.asset_id, &request.tag)
+        .await
+        .map_err(|e| e.to_string())?;
+
+    Ok(asset_to_response(&asset))
+}
+
+/// Removes a tag from an asset.
+#[tauri::command]
+pub async fn untag_asset(
+    state: State<'_, AppState>,
+    request: UntagAssetRequest,
+) -> Result<AssetResponse, String> {
+    let asset = state
+        .asset_service
+        .untag_asset(&request.asset_id, &request.tag)
+        .await
+        .map_err(|e| e.to_string())?;
+
+    Ok(asset_to_response(&asset))
+}
+
+/// Creates a new collection.
+#[tauri::command]
+pub async fn create_collection(
+    state: State<'_, AppState>,
+    request: CollectionCreateRequest,
+) -> Result<CollectionResponse, String> {
+    let collection = state
+        .asset_service
+        .create_collection(&request.project_id, &request.name)
+        .await
+        .map_err(|e| e.to_string())?;
+
+    Ok(CollectionResponse {
+        id: collection.id,
+        project_id: collection.project_id.into_uuid().to_string(),
+        name: collection.name,
+        created_at: collection.created_at.to_string(),
+    })
+}
+
+/// Lists all collections for a project.
+#[tauri::command]
+pub async fn list_collections(
+    state: State<'_, AppState>,
+    project_id: String,
+) -> Result<Vec<CollectionResponse>, String> {
+    let collections = state
+        .asset_service
+        .list_collections(&project_id)
+        .await
+        .map_err(|e| e.to_string())?;
+
+    Ok(collections
+        .iter()
+        .map(|c| CollectionResponse {
+            id: c.id.clone(),
+            project_id: c.project_id.into_uuid().to_string(),
+            name: c.name.clone(),
+            created_at: c.created_at.to_string(),
+        })
+        .collect())
+}
+
+/// Deletes a collection.
+#[tauri::command]
+pub async fn delete_collection(
+    state: State<'_, AppState>,
+    collection_id: String,
+) -> Result<(), String> {
+    state
+        .asset_service
+        .delete_collection(&collection_id)
+        .await
+        .map_err(|e| e.to_string())
+}
+
+/// Adds an asset to a collection.
+#[tauri::command]
+pub async fn add_to_collection(
+    state: State<'_, AppState>,
+    request: AddToCollectionRequest,
+) -> Result<AssetResponse, String> {
+    let asset = state
+        .asset_service
+        .add_to_collection(&request.asset_id, &request.collection_id)
+        .await
+        .map_err(|e| e.to_string())?;
+
+    Ok(asset_to_response(&asset))
+}
+
+/// Removes an asset from its collection.
+#[tauri::command]
+pub async fn remove_from_collection(
+    state: State<'_, AppState>,
+    asset_id: String,
+) -> Result<AssetResponse, String> {
+    let asset = state
+        .asset_service
+        .remove_from_collection(&asset_id)
+        .await
+        .map_err(|e| e.to_string())?;
+
+    Ok(asset_to_response(&asset))
+}
+
+/// Gets the lineage chain for an asset.
+#[tauri::command]
+pub async fn get_asset_lineage(
+    state: State<'_, AppState>,
+    asset_id: String,
+) -> Result<AssetLineageResponse, String> {
+    let chain = state
+        .asset_service
+        .get_asset_lineage(&asset_id)
+        .await
+        .map_err(|e| e.to_string())?;
+
+    Ok(AssetLineageResponse {
+        chain: chain.iter().map(asset_to_response).collect(),
+    })
 }

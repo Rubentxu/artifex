@@ -494,14 +494,20 @@ impl WorkerRunner {
                 let metadata = Some(result.metadata.clone());
                 let file_path = output_file.to_string_lossy().to_string();
 
+                // Extract source_asset_id from job operation for lineage tracking
+                let source_asset_id = job.operation
+                    .get("source_asset_id")
+                    .and_then(|v| v.as_str());
+
                 let asset_service_clone = asset_service.clone();
                 match asset_service_clone
-                    .register_asset(
+                    .register_asset_with_lineage(
                         &project_id,
                         &asset_name,
                         asset_kind,
                         &file_path,
                         metadata,
+                        source_asset_id,
                     )
                     .await
                 {
@@ -636,6 +642,22 @@ mod tests {
 
         async fn find_by_kind(&self, _project_id: &artifex_shared_kernel::ProjectId, _kind: &artifex_asset_management::AssetKind) -> Result<Vec<artifex_asset_management::Asset>, artifex_shared_kernel::ArtifexError> {
             Ok(vec![])
+        }
+
+        async fn find_by_tag(&self, _project_id: &artifex_shared_kernel::ProjectId, _tag: &str) -> Result<Vec<artifex_asset_management::Asset>, artifex_shared_kernel::ArtifexError> {
+            Ok(vec![])
+        }
+
+        async fn find_by_collection(&self, _project_id: &artifex_shared_kernel::ProjectId, _collection_id: &str) -> Result<Vec<artifex_asset_management::Asset>, artifex_shared_kernel::ArtifexError> {
+            Ok(vec![])
+        }
+
+        async fn update_tags(&self, _id: &artifex_shared_kernel::AssetId, _tags: &[String]) -> Result<(), artifex_shared_kernel::ArtifexError> {
+            Ok(())
+        }
+
+        async fn update_collection(&self, _id: &artifex_shared_kernel::AssetId, _collection_id: Option<&str>) -> Result<(), artifex_shared_kernel::ArtifexError> {
+            Ok(())
         }
 
         async fn delete(&self, _id: &artifex_shared_kernel::AssetId) -> Result<(), artifex_shared_kernel::ArtifexError> {
