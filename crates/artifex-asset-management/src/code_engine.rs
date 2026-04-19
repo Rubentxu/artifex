@@ -39,6 +39,38 @@ impl CodeEngine {
         }
     }
 
+    /// Returns the planning phase prompt for this engine.
+    pub fn plan_prompt(&self) -> &'static str {
+        match self {
+            CodeEngine::Godot => GODOT_PLAN_PROMPT,
+            CodeEngine::Unity => UNITY_PLAN_PROMPT,
+        }
+    }
+
+    /// Returns the execution phase prompt for this engine.
+    pub fn execute_prompt(&self) -> &'static str {
+        match self {
+            CodeEngine::Godot => GODOT_EXECUTE_PROMPT,
+            CodeEngine::Unity => UNITY_EXECUTE_PROMPT,
+        }
+    }
+
+    /// Returns the verification phase prompt for this engine.
+    pub fn verify_prompt(&self) -> &'static str {
+        match self {
+            CodeEngine::Godot => GODOT_VERIFY_PROMPT,
+            CodeEngine::Unity => UNITY_VERIFY_PROMPT,
+        }
+    }
+
+    /// Returns the refinement phase prompt for this engine.
+    pub fn refine_prompt(&self) -> &'static str {
+        match self {
+            CodeEngine::Godot => GODOT_REFINE_PROMPT,
+            CodeEngine::Unity => UNITY_REFINE_PROMPT,
+        }
+    }
+
     /// Parses a string to CodeEngine.
     #[allow(clippy::should_implement_trait)]
     pub fn from_str(s: &str) -> Option<Self> {
@@ -136,6 +168,118 @@ Rules:
 - Include proper namespaces
 - Use [Serializable] for custom data classes
 - Write self-documenting code with clear structure"#;
+
+/// Planning prompt for Godot code agent.
+const GODOT_PLAN_PROMPT: &str = r#"You are an expert Godot 4 game developer. Analyze the user's request and create a detailed implementation plan.
+
+Output format: Respond with a numbered list of steps. Each step should describe a specific file or component to create.
+
+Example:
+1. Create a PlayerController.gd script with movement logic
+2. Create a HealthComponent.gd for damage handling
+3. Create a Player.tscn scene combining these components"#;
+
+/// Planning prompt for Unity code agent.
+const UNITY_PLAN_PROMPT: &str = r#"You are an expert Unity game developer. Analyze the user's request and create a detailed implementation plan.
+
+Output format: Respond with a numbered list of steps. Each step should describe a specific file or component to create.
+
+Example:
+1. Create a PlayerController.cs script with movement logic
+2. Create a HealthComponent.cs for damage handling
+3. Create a Player.prefab combining these components"#;
+
+/// Execution prompt for Godot code agent.
+const GODOT_EXECUTE_PROMPT: &str = r#"You are an expert Godot 4 GDScript developer. Based on the following plan, generate the complete code implementation.
+
+Output format: You MUST respond with valid JSON in this exact structure:
+{
+  "engine": "godot",
+  "summary": "Brief description of what was generated",
+  "files": [
+    {
+      "path": "relative/path/to/file.gd",
+      "language": "gdscript",
+      "description": "What this file contains",
+      "content": "The complete GDScript code"
+    }
+  ]
+}
+
+Rules:
+- Output ONLY JSON, no markdown code fences
+- Use Godot 4 best practices (@export, @onready, signals)
+- Include class_name when appropriate
+- Write complete, production-ready code"#;
+
+/// Execution prompt for Unity code agent.
+const UNITY_EXECUTE_PROMPT: &str = r#"You are an expert Unity C# developer. Based on the following plan, generate the complete code implementation.
+
+Output format: You MUST respond with valid JSON in this exact structure:
+{
+  "engine": "unity",
+  "summary": "Brief description of what was generated",
+  "files": [
+    {
+      "path": "relative/path/to/file.cs",
+      "language": "csharp",
+      "description": "What this file contains",
+      "content": "The complete C# code"
+    }
+  ]
+}
+
+Rules:
+- Output ONLY JSON, no markdown code fences
+- Use Unity best practices ([SerializeField], MonoBehaviour lifecycle)
+- Include proper namespaces and [Serializable] classes
+- Write complete, production-ready code"#;
+
+/// Verification prompt for Godot code agent.
+const GODOT_VERIFY_PROMPT: &str = r#"You are an expert Godot 4 code reviewer. Review the generated code for correctness, best practices, and potential issues.
+
+Output format: Respond with JSON:
+{
+  "issues": ["list of issues found, empty array if none"],
+  "score": 0-10,
+  "summary": "Brief overall assessment"
+}
+
+Focus on:
+- Godot 4 API correctness
+- Memory management and node handling
+- Signal usage
+- Type safety"#;
+
+/// Verification prompt for Unity code agent.
+const UNITY_VERIFY_PROMPT: &str = r#"You are an expert Unity code reviewer. Review the generated code for correctness, best practices, and potential issues.
+
+Output format: Respond with JSON:
+{
+  "issues": ["list of issues found, empty array if none"],
+  "score": 0-10,
+  "summary": "Brief overall assessment"
+}
+
+Focus on:
+- Unity API correctness
+- Memory management
+- MonoBehaviour lifecycle
+- Thread safety"#;
+
+/// Refinement prompt for Godot code agent.
+const GODOT_REFINE_PROMPT: &str = r#"You are an expert Godot 4 GDScript developer. Based on the following verification feedback, improve the generated code.
+
+Output format: Respond with valid JSON in the same format as before with improved code.
+
+Focus on fixing the specific issues mentioned in the feedback."#;
+
+/// Refinement prompt for Unity code agent.
+const UNITY_REFINE_PROMPT: &str = r#"You are an expert Unity C# developer. Based on the following verification feedback, improve the generated code.
+
+Output format: Respond with valid JSON in the same format as before with improved code.
+
+Focus on fixing the specific issues mentioned in the feedback."#;
 
 #[cfg(test)]
 mod tests {

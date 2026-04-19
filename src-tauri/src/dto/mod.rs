@@ -42,7 +42,7 @@ pub use atlas::{AtlasSortMode, PackAtlasOptions, PackAtlasRequest};
 pub use quick_sprites::{
     QuickSpritesMode, QuickSpritesOutputFormat, QuickSpritesOptions, QuickSpritesRequest,
 };
-pub use code::GenerateCodeRequest;
+pub use code::{CodeAgentRequest, GenerateCodeRequest};
 pub use materials::GenerateMaterialRequest;
 pub use publish::{ExportProjectResponse, ExportProjectRequest};
 pub use renderer_3d::{CameraAngle, Render3dRequest};

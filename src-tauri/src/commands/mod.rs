@@ -30,7 +30,7 @@ pub use animations::{create_animation, delete_animation, export_animation, get_a
 pub use atlas::pack_atlas;
 pub use assets::{delete_asset, get_asset, import_asset, list_assets, register_asset};
 pub use audio_gen::{generate_audio, synthesize_speech};
-pub use code_gen::generate_code;
+pub use code_gen::{generate_code, start_code_agent};
 pub use convert_pixel_art::convert_pixel_art;
 pub use generate_material::generate_material;
 pub use generate_sprite_sheet::generate_sprite_sheet;

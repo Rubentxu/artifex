@@ -58,3 +58,18 @@ export interface QuotaResult {
   limit: number;
   period: string;
 }
+
+// Code agent types
+export interface CodeAgentRequest {
+  projectId: string;
+  engine: 'godot' | 'unity';
+  prompt: string;
+  modelId?: string;
+  maxDurationSecs?: number;
+}
+
+export interface AgentStepProgress {
+  phase: 'plan' | 'execute' | 'verify' | 'refine' | 'done' | 'failed';
+  stepName: string;
+  percent: number;
+}

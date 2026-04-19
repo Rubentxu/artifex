@@ -3,6 +3,7 @@
 //! Contains the worker traits and implementations for processing jobs.
 
 pub mod traits;
+pub mod agent_code_worker;
 pub mod atlas_pack_types;
 pub mod atlas_pack_worker;
 pub mod code_worker;
@@ -22,6 +23,7 @@ pub mod video_gen_worker;
 pub mod runner;
 
 pub use traits::{JobFuture, JobResult, JobWorker};
+pub use agent_code_worker::{AgentCodeWorker, AgentPhase, AgentState, CodeAgentOperation};
 pub use atlas_pack_worker::AtlasPackWorker;
 pub use code_worker::{CodeWorker, CodeGenOperation, CodeFile};
 pub use image_gen_provider::{ImageGenParams, ImageGenProvider, ImageGenResult};

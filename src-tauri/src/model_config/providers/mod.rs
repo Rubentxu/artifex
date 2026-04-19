@@ -9,6 +9,7 @@ pub mod fal_image;
 pub mod fal_video;
 pub mod huggingface_image;
 pub mod together_text;
+pub mod together_chat;
 pub mod kie_image;
 
 pub use elevenlabs::ElevenLabsProvider;
@@ -18,4 +19,5 @@ pub use fal_image::FalImageProvider;
 pub use fal_video::FalVideoProvider;
 pub use huggingface_image::HuggingFaceImageProvider;
 pub use together_text::TogetherTextProvider;
+pub use together_chat::TogetherChatProvider;
 pub use kie_image::KieImageProvider;

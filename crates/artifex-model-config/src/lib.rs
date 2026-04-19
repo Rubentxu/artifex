@@ -4,6 +4,7 @@
 //! and routing for AI model services.
 
 pub mod audio_provider;
+pub mod chat_provider;
 pub mod credential_store;
 pub mod image_provider;
 pub mod model_profile;
@@ -18,6 +19,7 @@ pub mod video_provider;
 
 // Re-export commonly used types
 pub use audio_provider::{AudioGenParams, AudioGenResult, AudioProvider};
+pub use chat_provider::{ChatMessage, ChatParams, ChatProvider, ChatResult, ChatRole};
 pub use credential_store::{CredentialStore, CredentialError, InMemoryCredentialStore};
 pub use image_provider::{ImageEditParams, ImageGenParams, ImageGenResult, ImageProvider, MapKind, MaterialGenParams, MaterialResult};
 pub use model_profile::{ModelProfile, PricingTier};

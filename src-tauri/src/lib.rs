@@ -23,7 +23,7 @@ use commands::{
     get_animation, get_asset, get_job, get_project, import_asset, inpaint_image, list_animations,
     list_assets, list_code_templates, list_jobs, list_projects, open_itch_io, open_project, outpaint_image,
     pack_atlas, register_asset, remove_background, rename_project, render_3d_to_sprites, slice_sprite_sheet, synthesize_speech,
-    update_animation,
+    start_code_agent, update_animation,
 };
 use identity::commands::{check_quota, get_current_user, get_usage, set_tier, update_profile};
 use model_config::{
@@ -87,6 +87,7 @@ pub fn run_app() {
             slice_sprite_sheet,
             pack_atlas,
             generate_code,
+            start_code_agent,
             generate_material,
             list_code_templates,
             // Publishing commands

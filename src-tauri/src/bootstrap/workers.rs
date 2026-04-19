@@ -7,7 +7,7 @@ use artifex_model_config::ModelRouter;
 
 use crate::application::AssetApplicationService;
 use crate::workers::{
-    AnimationExportWorker, AtlasPackWorker, AudioGenWorker, CodeWorker, ImageGenWorker,
+    AgentCodeWorker, AnimationExportWorker, AtlasPackWorker, AudioGenWorker, CodeWorker, ImageGenWorker,
     ImageProcessWorker, MaterialWorker, QuickSpritesWorker, Renderer3dWorker, SliceWorker,
     SpriteWorker, TileWorker, SeamlessTextureWorker, VideoGenWorker, WorkerRunner,
 };
@@ -73,6 +73,11 @@ pub fn create_workers(
         assets_dir.clone(),
     ));
     let renderer_3d_worker = Arc::new(Renderer3dWorker::new(assets_dir.clone()));
+    let agent_worker = Arc::new(AgentCodeWorker::new(
+        assets_dir.clone(),
+        model_router.clone(),
+        credential_store.clone(),
+    ));
 
     WorkerRunner::with_app_handle(
         vec![
@@ -84,6 +89,7 @@ pub fn create_workers(
             sprite_worker,
             slice_worker,
             code_worker,
+            agent_worker,
             material_worker,
             animation_export_worker,
             atlas_pack_worker,
