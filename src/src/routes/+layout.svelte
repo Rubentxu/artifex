@@ -9,6 +9,10 @@
 
   onMount(async () => {
     await initStores();
+    if (import.meta.env.DEV) {
+      const { initDebugHarness } = await import('$lib/debug/harness');
+      initDebugHarness();
+    }
     initialized = true;
   });
 </script>
