@@ -172,3 +172,210 @@ export async function debugWaitForCondition(browser, predicateCode, timeout) {
 export async function debugSnapshot(browser) {
   return browser.execute(() => window.__ARTIFEX_DEBUG__.snapshot());
 }
+
+// ----------------------------------------------------------------------------
+// Mock Layer Helpers
+// These wrap window.__ARTIFEX_DEBUG__.mock* methods when available
+// ----------------------------------------------------------------------------
+
+/**
+ * Enable mock mode (switch from TauriBackend to MockBackend)
+ * @param {WebDriverIO.Browser} browser
+ */
+export async function debugEnableMock(browser) {
+  const result = await browser.execute(() => {
+    if (!window.__ARTIFEX_DEBUG__.mock) {
+      return { success: false, error: 'Mock API not available (DEV only)' };
+    }
+    window.__ARTIFEX_DEBUG__.mock.enableMock();
+    return { success: true };
+  });
+  if (!result.success) {
+    throw new Error(`Failed to enable mock: ${result.error}`);
+  }
+}
+
+/**
+ * Disable mock mode (restore TauriBackend)
+ * @param {WebDriverIO.Browser} browser
+ */
+export async function debugDisableMock(browser) {
+  return browser.execute(() => {
+    if (window.__ARTIFEX_DEBUG__.mock) {
+      window.__ARTIFEX_DEBUG__.mock.disableMock();
+    }
+  });
+}
+
+/**
+ * Check if mock mode is enabled
+ * @param {WebDriverIO.Browser} browser
+ */
+export async function debugIsMockMode(browser) {
+  return browser.execute(() => {
+    return window.__ARTIFEX_DEBUG__.mock?.isMockMode() ?? false;
+  });
+}
+
+/**
+ * Set mock data for a key
+ * @param {WebDriverIO.Browser} browser
+ * @param {string} key - 'projects', 'assets', 'user', 'providers', 'profiles', 'rules', 'templates'
+ * @param {unknown} data
+ */
+export async function debugSetMockData(browser, key, data) {
+  return browser.execute(
+    (k, d) => {
+      if (window.__ARTIFEX_DEBUG__.mock) {
+        window.__ARTIFEX_DEBUG__.mock.setMockData(k, d);
+      }
+    },
+    key,
+    data
+  );
+}
+
+/**
+ * Set mock tier
+ * @param {WebDriverIO.Browser} browser
+ * @param {'free' | 'pro'} tier
+ */
+export async function debugSetMockTier(browser, tier) {
+  return browser.execute(
+    (t) => {
+      if (window.__ARTIFEX_DEBUG__.mock) {
+        window.__ARTIFEX_DEBUG__.mock.setMockTier(t);
+      }
+    },
+    tier
+  );
+}
+
+/**
+ * Set mock job result
+ * @param {WebDriverIO.Browser} browser
+ * @param {'success' | 'error'} result
+ */
+export async function debugSetMockJobResult(browser, result) {
+  return browser.execute(
+    (r) => {
+      if (window.__ARTIFEX_DEBUG__.mock) {
+        window.__ARTIFEX_DEBUG__.mock.setMockJobResult(r);
+      }
+    },
+    result
+  );
+}
+
+/**
+ * Get all mock calls
+ * @param {WebDriverIO.Browser} browser
+ */
+export async function debugGetMockCalls(browser) {
+  return browser.execute(() => {
+    return window.__ARTIFEX_DEBUG__.mock?.getMockCalls() ?? [];
+  });
+}
+
+/**
+ * Get mock call history for a specific command
+ * @param {WebDriverIO.Browser} browser
+ * @param {string} command
+ */
+export async function debugGetMockCallHistory(browser, command) {
+  return browser.execute(
+    (cmd) => {
+      return window.__ARTIFEX_DEBUG__.mock?.getMockCallHistory(cmd) ?? [];
+    },
+    command
+  );
+}
+
+/**
+ * Reset mock call history
+ * @param {WebDriverIO.Browser} browser
+ */
+export async function debugResetMockCalls(browser) {
+  return browser.execute(() => {
+    if (window.__ARTIFEX_DEBUG__.mock) {
+      window.__ARTIFEX_DEBUG__.mock.resetMockCalls();
+    }
+  });
+}
+
+/**
+ * Simulate job progress event manually
+ * @param {WebDriverIO.Browser} browser
+ * @param {string} jobId
+ * @param {number} percent
+ * @param {string} message
+ */
+export async function debugSimulateJobProgress(browser, jobId, percent, message) {
+  return browser.execute(
+    (id, pct, msg) => {
+      if (window.__ARTIFEX_DEBUG__.mock) {
+        return window.__ARTIFEX_DEBUG__.mock.simulateJobProgress(id, pct, msg);
+      }
+      return Promise.resolve();
+    },
+    jobId,
+    percent,
+    message
+  );
+}
+
+/**
+ * Simulate job completed event manually
+ * @param {WebDriverIO.Browser} browser
+ * @param {string} jobId
+ * @param {string[]} assetIds
+ */
+export async function debugSimulateJobCompleted(browser, jobId, assetIds) {
+  return browser.execute(
+    (id, assetIdsArr) => {
+      if (window.__ARTIFEX_DEBUG__.mock) {
+        return window.__ARTIFEX_DEBUG__.mock.simulateJobCompleted(id, assetIdsArr);
+      }
+      return Promise.resolve();
+    },
+    jobId,
+    assetIds
+  );
+}
+
+/**
+ * Simulate job failed event manually
+ * @param {WebDriverIO.Browser} browser
+ * @param {string} jobId
+ * @param {string} error
+ */
+export async function debugSimulateJobFailed(browser, jobId, error) {
+  return browser.execute(
+    (id, errMsg) => {
+      if (window.__ARTIFEX_DEBUG__.mock) {
+        return window.__ARTIFEX_DEBUG__.mock.simulateJobFailed(id, errMsg);
+      }
+      return Promise.resolve();
+    },
+    jobId,
+    error
+  );
+}
+
+/**
+ * Wait for route to match expected path
+ * @param {WebDriverIO.Browser} browser
+ * @param {string} expectedPath
+ * @param {number} timeout
+ */
+export async function debugWaitForRoute(browser, expectedPath, timeout = 5000) {
+  const start = Date.now();
+  while (Date.now() - start < timeout) {
+    const route = await debugGetRoute(browser);
+    if (route.path === expectedPath) {
+      return true;
+    }
+    await browser.pause(50);
+  }
+  throw new Error(`Route did not become ${expectedPath} (was ${(await debugGetRoute(browser)).path})`);
+}

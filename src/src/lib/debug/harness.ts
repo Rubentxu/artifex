@@ -16,6 +16,23 @@ import {
 } from './dom-inspector';
 import type { DebugAPI } from './types';
 
+// Mock layer — only loaded in DEV mode (tree-shaken in production)
+import {
+  enableMock,
+  disableMock,
+  isMockMode,
+  setMockData,
+  setMockTier,
+  setMockJobResult,
+  simulateJobProgress,
+  simulateJobCompleted,
+  simulateJobFailed,
+  getMockCalls,
+  getMockCallHistory,
+  resetMockCalls,
+  getMockState,
+} from './mock-layer';
+
 const VERSION = '1.0.0';
 
 let api: DebugAPI | null = null;
@@ -53,6 +70,24 @@ export function initDebugHarness(): void {
       destroyDebugHarness();
     },
     version: VERSION,
+    // Mock layer API — only functional in DEV mode
+    mock: import.meta.env.DEV
+      ? {
+          enableMock,
+          disableMock,
+          isMockMode,
+          setMockData,
+          setMockTier,
+          setMockJobResult,
+          simulateJobProgress,
+          simulateJobCompleted,
+          simulateJobFailed,
+          getMockCalls,
+          getMockCallHistory,
+          resetMockCalls,
+          getMockState,
+        }
+      : undefined,
   };
 
   // Attach to global
@@ -64,6 +99,10 @@ export function initDebugHarness(): void {
 export function destroyDebugHarness(): void {
   if (api) {
     destroyStoreInspector();
+    // Ensure mock is disabled on destroy
+    if (import.meta.env.DEV && api.mock?.isMockMode()) {
+      api.mock.disableMock();
+    }
     delete (window as unknown as Record<string, unknown>).__ARTIFEX_DEBUG__;
     api = null;
     console.log('[debug-harness] destroyed');

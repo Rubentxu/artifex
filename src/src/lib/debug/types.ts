@@ -119,6 +119,29 @@ export interface PageSnapshot {
 }
 
 /**
+ * The MockAPI surface for controlling the mock layer
+ */
+export interface MockAPI {
+  // Enable/disable mock mode
+  enableMock(): void;
+  disableMock(): void;
+  isMockMode(): boolean;
+  // Configure mock data
+  setMockData(key: string, data: unknown): void;
+  setMockTier(tier: 'free' | 'pro'): void;
+  setMockJobResult(result: 'success' | 'error'): void;
+  // Simulate job lifecycle manually
+  simulateJobProgress(jobId: string, percent: number, message: string): Promise<void>;
+  simulateJobCompleted(jobId: string, assetIds: string[]): Promise<void>;
+  simulateJobFailed(jobId: string, error: string): Promise<void>;
+  // Get mock state
+  getMockCalls(): Array<{ command: string; args: unknown }>;
+  getMockCallHistory(command: string): Array<unknown>;
+  resetMockCalls(): void;
+  getMockState(): unknown;
+}
+
+/**
  * The full DebugAPI surface exposed on window.__ARTIFEX_DEBUG__
  */
 export interface DebugAPI {
@@ -146,4 +169,6 @@ export interface DebugAPI {
   snapshot(): PageSnapshot;
   destroy(): void;
   version: string;
+  // Mock layer (only active in DEV)
+  mock?: MockAPI;
 }
