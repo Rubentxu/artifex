@@ -1,6 +1,8 @@
 <script lang="ts">
   import { assetStore } from '$lib/stores/asset';
   import type { AssetResponse, PackAtlasRequest, PackAtlasOptions, AtlasSortMode } from '$lib/types/asset';
+  import Dialog from '$lib/components/ui/Dialog.svelte';
+  import Button from '$lib/components/ui/Button.svelte';
 
   interface Props {
     open: boolean;
@@ -93,195 +95,153 @@
       selectedAssetIds = [...selectedAssetIds, assetId];
     }
   }
-
-  function handleKeydown(event: KeyboardEvent) {
-    if (event.key === 'Escape') {
-      handleClose();
-    }
-  }
 </script>
 
-<svelte:window onkeydown={handleKeydown} />
+<Dialog
+  {open}
+  onClose={handleClose}
+  title="Pack Texture Atlas"
+  width="2xl"
+  bordered
+  scrollBody
+  {error}
+>
+  <div class="space-y-4">
+    <!-- Atlas Name -->
+    <div>
+      <label class="block text-sm font-medium mb-1.5" for="atlas-name">Atlas Name</label>
+      <input
+        id="atlas-name"
+        type="text"
+        bind:value={atlasName}
+        class="w-full px-3 py-2 bg-[var(--color-surface)] rounded-sm border border-[var(--color-surface)] focus:border-[var(--color-neon)] focus:shadow-[var(--glow-neon)] focus:outline-none"
+        placeholder="my_atlas"
+      />
+    </div>
 
-{#if open}
-  <!-- Backdrop -->
-  <div
-    class="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
-    onclick={handleClose}
-    role="dialog"
-    aria-modal="true"
-  >
-    <!-- Dialog -->
-    <div
-      class="bg-[var(--color-panel)] rounded-xl shadow-2xl w-full max-w-2xl mx-4 border border-[var(--color-surface)] max-h-[90vh] flex flex-col"
-      onclick={(e) => e.stopPropagation()}
-    >
-      <!-- Header -->
-      <div class="flex items-center justify-between px-6 py-4 border-b border-[var(--color-surface)]">
-        <h2 class="text-xl font-bold">Pack Texture Atlas</h2>
-        <button
-          onclick={handleClose}
-          class="p-1 rounded-lg hover:bg-[var(--color-surface)] transition-colors"
+    <!-- Options Row -->
+    <div class="grid grid-cols-2 gap-4">
+      <!-- Max Size -->
+      <div>
+        <label for="atlas-max-size" class="block text-sm font-medium mb-1">
+          Max Size
+        </label>
+        <select
+          id="atlas-max-size"
+          bind:value={maxSize}
+          class="w-full px-3 py-2 bg-[var(--color-surface)] rounded-sm border border-[var(--color-surface)] focus:border-[var(--color-neon)] focus:shadow-[var(--glow-neon)] focus:outline-none"
         >
-          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
+          {#each maxSizeOptions as opt}
+            <option value={opt.value}>{opt.label}</option>
+          {/each}
+        </select>
       </div>
 
-      <!-- Content -->
-      <div class="p-6 space-y-4 overflow-y-auto flex-1">
-        {#if error}
-          <div class="p-3 rounded-lg bg-red-500/20 border border-red-500/50 text-red-400 text-sm">
-            {error}
-          </div>
-        {/if}
-
-        <!-- Atlas Name -->
-        <div>
-          <label class="block text-sm font-medium mb-1.5" for="atlas-name">Atlas Name</label>
-          <input
-            id="atlas-name"
-            type="text"
-            bind:value={atlasName}
-            class="w-full px-3 py-2 bg-[var(--color-surface)] rounded-lg border border-[var(--color-surface)] focus:border-[var(--color-accent)] focus:outline-none"
-            placeholder="my_atlas"
-          />
-        </div>
-
-        <!-- Options Row -->
-        <div class="grid grid-cols-2 gap-4">
-          <!-- Max Size -->
-          <div>
-            <label for="atlas-max-size" class="block text-sm font-medium mb-1">
-              Max Size
-            </label>
-            <select
-              id="atlas-max-size"
-              bind:value={maxSize}
-              class="w-full px-3 py-2 bg-[var(--color-surface)] rounded-lg border border-[var(--color-surface)] focus:border-[var(--color-accent)] focus:outline-none"
-            >
-              {#each maxSizeOptions as opt}
-                <option value={opt.value}>{opt.label}</option>
-              {/each}
-            </select>
-          </div>
-
-          <!-- Padding -->
-          <div>
-            <label for="atlas-padding" class="block text-sm font-medium mb-1">
-              Padding (px)
-            </label>
-            <input
-              id="atlas-padding"
-              type="number"
-              bind:value={padding}
-              min="0"
-              max="16"
-              class="w-full px-3 py-2 bg-[var(--color-surface)] rounded-lg border border-[var(--color-surface)] focus:border-[var(--color-accent)] focus:outline-none"
-            />
-          </div>
-        </div>
-
-        <!-- Options Row 2 -->
-        <div class="grid grid-cols-2 gap-4">
-          <!-- Allow Rotation -->
-          <div class="flex items-center gap-2">
-            <input
-              id="atlas-rotation"
-              type="checkbox"
-              bind:checked={allowRotation}
-              class="w-4 h-4 rounded border-[var(--color-surface)] text-[var(--color-accent)] focus:ring-[var(--color-accent)]"
-            />
-            <label for="atlas-rotation" class="text-sm font-medium">Allow Rotation</label>
-          </div>
-
-          <!-- Sort Mode -->
-          <div>
-            <label for="atlas-sort-mode" class="block text-sm font-medium mb-1">
-              Sort Mode
-            </label>
-            <select
-              id="atlas-sort-mode"
-              bind:value={sortMode}
-              class="w-full px-3 py-2 bg-[var(--color-surface)] rounded-lg border border-[var(--color-surface)] focus:border-[var(--color-accent)] focus:outline-none"
-            >
-              {#each sortModeOptions as opt}
-                <option value={opt.value}>{opt.label}</option>
-              {/each}
-            </select>
-          </div>
-        </div>
-
-        <!-- Asset Selection -->
-        <div>
-          <label class="block text-sm font-medium mb-1.5">
-            Select Assets ({selectedAssetIds.length} selected, minimum 2)
-          </label>
-          {#if selectedAssetIds.length < 2}
-            <p class="text-xs text-[var(--color-text-muted)] mb-2">Select at least 2 assets to pack</p>
-          {/if}
-          <div class="grid grid-cols-4 gap-2 max-h-64 overflow-y-auto p-1">
-            {#each availableAssets as asset (asset.id)}
-              {@const selected = selectedAssetIds.includes(asset.id)}
-              <button
-                onclick={() => toggleAsset(asset.id)}
-                class="relative p-2 rounded-lg border-2 transition-colors text-left
-                  {selected
-                    ? 'border-[var(--color-accent)] bg-[var(--color-accent)]/10'
-                    : 'border-[var(--color-surface)] hover:border-[var(--color-accent)]/50'}"
-              >
-                {#if asset.file_path}
-                  <img
-                    src={asset.file_path}
-                    alt={asset.name}
-                    class="w-full aspect-square object-cover rounded"
-                  />
-                {:else}
-                  <div class="w-full aspect-square bg-[var(--color-surface)] rounded flex items-center justify-center text-xs text-[var(--color-text-muted)]">
-                    {asset.name.slice(0, 6)}
-                  </div>
-                {/if}
-                <div class="mt-1 text-xs truncate">{asset.name}</div>
-                <div class="text-xs text-[var(--color-text-muted)]">{asset.kind}</div>
-                {#if selected}
-                  <div class="absolute top-1 right-1 w-5 h-5 bg-[var(--color-accent)] rounded-full flex items-center justify-center">
-                    <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
-                    </svg>
-                  </div>
-                {/if}
-              </button>
-            {/each}
-          </div>
-          {#if availableAssets.length === 0}
-            <p class="text-sm text-[var(--color-text-muted)] text-center py-8">
-              No Image/Sprite/Tileset assets available. Import some assets first.
-            </p>
-          {/if}
-        </div>
-      </div>
-
-      <!-- Footer -->
-      <div class="flex items-center justify-end gap-3 px-6 py-4 border-t border-[var(--color-surface)]">
-        <button
-          onclick={handleClose}
-          class="px-4 py-2 rounded-lg bg-[var(--color-surface)] hover:bg-[var(--color-surface)]/80 transition-colors font-medium"
-        >
-          Cancel
-        </button>
-        <button
-          onclick={handlePack}
-          disabled={loading || selectedAssetIds.length < 2 || !atlasName.trim()}
-          class="px-4 py-2 rounded-lg bg-[var(--color-accent)] hover:bg-[var(--color-accent)]/80 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {#if loading}
-            Packing...
-          {:else}
-            Pack Atlas
-          {/if}
-        </button>
+      <!-- Padding -->
+      <div>
+        <label for="atlas-padding" class="block text-sm font-medium mb-1">
+          Padding (px)
+        </label>
+        <input
+          id="atlas-padding"
+          type="number"
+          bind:value={padding}
+          min="0"
+          max="16"
+          class="w-full px-3 py-2 bg-[var(--color-surface)] rounded-sm border border-[var(--color-surface)] focus:border-[var(--color-neon)] focus:shadow-[var(--glow-neon)] focus:outline-none"
+        />
       </div>
     </div>
+
+    <!-- Options Row 2 -->
+    <div class="grid grid-cols-2 gap-4">
+      <!-- Allow Rotation -->
+      <div class="flex items-center gap-2">
+        <input
+          id="atlas-rotation"
+          type="checkbox"
+          bind:checked={allowRotation}
+          class="w-4 h-4 rounded border-[var(--color-surface)] text-[var(--color-accent)] focus:ring-[var(--color-accent)]"
+        />
+        <label for="atlas-rotation" class="text-sm font-medium">Allow Rotation</label>
+      </div>
+
+      <!-- Sort Mode -->
+      <div>
+        <label for="atlas-sort-mode" class="block text-sm font-medium mb-1">
+          Sort Mode
+        </label>
+        <select
+          id="atlas-sort-mode"
+          bind:value={sortMode}
+          class="w-full px-3 py-2 bg-[var(--color-surface)] rounded-sm border border-[var(--color-surface)] focus:border-[var(--color-neon)] focus:shadow-[var(--glow-neon)] focus:outline-none"
+        >
+          {#each sortModeOptions as opt}
+            <option value={opt.value}>{opt.label}</option>
+          {/each}
+        </select>
+      </div>
+    </div>
+
+    <!-- Asset Selection -->
+    <div>
+      <label class="block text-sm font-medium mb-1.5">
+        Select Assets ({selectedAssetIds.length} selected, minimum 2)
+      </label>
+      {#if selectedAssetIds.length < 2}
+        <p class="text-xs text-[var(--color-text-muted)] mb-2">Select at least 2 assets to pack</p>
+      {/if}
+      <div class="grid grid-cols-4 gap-2 max-h-64 overflow-y-auto p-1">
+        {#each availableAssets as asset (asset.id)}
+          {@const selected = selectedAssetIds.includes(asset.id)}
+          <button
+            onclick={() => toggleAsset(asset.id)}
+            class="relative p-2 rounded-sm border-2 transition-colors text-left
+              {selected
+                ? 'border-[var(--color-neon)] bg-[var(--color-neon)]/10'
+                : 'border-[var(--color-surface)] hover:border-[var(--color-neon)]/50'}"
+          >
+            {#if asset.file_path}
+              <img
+                src={asset.file_path}
+                alt={asset.name}
+                class="w-full aspect-square object-cover rounded"
+              />
+            {:else}
+              <div class="w-full aspect-square bg-[var(--color-surface)] rounded flex items-center justify-center text-xs text-[var(--color-text-muted)]">
+                {asset.name.slice(0, 6)}
+              </div>
+            {/if}
+            <div class="mt-1 text-xs truncate">{asset.name}</div>
+            <div class="text-xs text-[var(--color-text-muted)]">{asset.kind}</div>
+            {#if selected}
+              <div class="absolute top-1 right-1 w-5 h-5 bg-[var(--color-neon)] rounded-full flex items-center justify-center">
+                <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+            {/if}
+          </button>
+        {/each}
+      </div>
+      {#if availableAssets.length === 0}
+        <p class="text-sm text-[var(--color-text-muted)] text-center py-8">
+          No Image/Sprite/Tileset assets available. Import some assets first.
+        </p>
+      {/if}
+    </div>
   </div>
-{/if}
+
+  {#snippet footer()}
+    <Button variant="ghost" onclick={handleClose}>
+      Cancel
+    </Button>
+    <Button onclick={handlePack} disabled={loading || selectedAssetIds.length < 2 || !atlasName.trim()}>
+      {#if loading}
+        Packing...
+      {:else}
+        Pack Atlas
+      {/if}
+    </Button>
+  {/snippet}
+</Dialog>

@@ -171,7 +171,7 @@
     <h1 class="text-2xl font-bold">Settings</h1>
     <button
       onclick={loadData}
-      class="px-3 py-1.5 text-sm bg-[var(--color-surface)] hover:bg-[var(--color-surface)]/80 rounded-lg transition-colors"
+      class="px-3 py-1.5 text-sm bg-[var(--color-surface)] hover:bg-[var(--color-surface)]/80 rounded-sm transition-colors"
     >
       Refresh
     </button>
@@ -184,14 +184,14 @@
         <div class="text-[var(--color-text-muted)]">Loading...</div>
       </div>
     {:else if error}
-      <div class="p-4 rounded-lg bg-red-500/20 border border-red-500/50 text-red-400">
+      <div class="p-4 rounded-sm bg-[var(--color-destructive)]/20 border border-[var(--color-destructive)]/50 text-[var(--color-destructive)]">
         {error}
       </div>
     {:else}
       <div class="max-w-4xl space-y-8">
         <!-- Profile Section -->
-        <section class="p-6 bg-[var(--color-panel)] rounded-xl space-y-4">
-          <h3 class="text-lg font-semibold text-[var(--color-text)]">Profile</h3>
+          <section class="p-6 bg-[var(--color-panel)] rounded-sm space-y-4">
+            <h3 class="text-lg font-semibold text-[var(--color-text)]">Profile</h3>
           <div class="grid gap-4 md:grid-cols-2">
             <div class="space-y-2">
               <label for="displayName" class="text-sm font-medium text-[var(--color-text)]">Display Name</label>
@@ -199,7 +199,7 @@
                 id="displayName"
                 type="text"
                 bind:value={profileDisplayName}
-                class="w-full px-3 py-2 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
+                class="w-full px-3 py-2 bg-[var(--color-panel)] border border-[var(--color-surface)] rounded-sm text-[var(--color-text)] focus:border-[var(--color-neon)] focus:shadow-[var(--glow-neon)] focus:outline-none transition-all"
               />
             </div>
             <div class="space-y-2">
@@ -208,7 +208,7 @@
                 id="email"
                 type="email"
                 bind:value={profileEmail}
-                class="w-full px-3 py-2 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
+                class="w-full px-3 py-2 bg-[var(--color-panel)] border border-[var(--color-surface)] rounded-sm text-[var(--color-text)] focus:border-[var(--color-neon)] focus:shadow-[var(--glow-neon)] focus:outline-none transition-all"
               />
             </div>
           </div>
@@ -216,26 +216,26 @@
             <button
               onclick={handleProfileSave}
               disabled={profileSaving}
-              class="px-4 py-2 bg-[var(--color-accent)] hover:bg-[var(--color-accent)]/80 disabled:opacity-50 rounded-lg transition-colors font-medium"
+              class="px-4 py-2 bg-[var(--color-neon)] hover:shadow-[var(--glow-neon)] text-[#0A0A0F] font-bold disabled:opacity-50 rounded-sm transition-all"
             >
               {profileSaving ? 'Saving...' : 'Save Profile'}
             </button>
             {#if profileSaveSuccess}
-              <span class="text-green-400 text-sm">Profile saved!</span>
+              <span class="text-[var(--color-neon)] text-sm">Profile saved!</span>
             {/if}
           </div>
         </section>
 
         <!-- Tier & License Section -->
-        <section class="p-6 bg-[var(--color-panel)] rounded-xl space-y-4">
-          <h3 class="text-lg font-semibold text-[var(--color-text)]">Tier & License</h3>
-          <div class="flex items-center justify-between">
-            <div class="flex items-center gap-4">
-              <div class="px-4 py-2 rounded-lg font-bold text-sm uppercase
-                {$identityStore.tier === 'pro'
-                  ? 'bg-purple-500/20 text-purple-400 border border-purple-500/50'
-                  : 'bg-gray-500/20 text-gray-400 border border-gray-500/50'
-                }">
+          <section class="p-6 bg-[var(--color-panel)] rounded-sm space-y-4">
+            <h3 class="text-lg font-semibold text-[var(--color-text)]">Tier & License</h3>
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-4">
+                <div class="px-4 py-2 rounded-sm font-bold text-sm uppercase
+                  {$identityStore.tier === 'pro'
+                    ? 'bg-[var(--color-magenta)]/20 text-[var(--color-magenta)] border border-[var(--color-magenta)]/50'
+                    : 'bg-[var(--color-muted)]/20 text-[var(--color-muted)] border border-[var(--color-muted)]/50'
+                  }">
                 {$identityStore.tier}
               </div>
               <div>
@@ -249,7 +249,7 @@
                 href="https://artifex.example.com/upgrade"
                 target="_blank"
                 rel="noopener noreferrer"
-                class="px-4 py-2 bg-purple-500 hover:bg-purple-400 rounded-lg transition-colors font-medium text-white"
+                class="px-4 py-2 bg-[var(--color-magenta)] hover:shadow-[var(--glow-magenta)] text-white rounded-sm transition-all font-medium"
               >
                 Upgrade to Pro
               </a>
@@ -258,11 +258,11 @@
         </section>
 
         <!-- Usage Stats Section -->
-        <section class="p-6 bg-[var(--color-panel)] rounded-xl space-y-4">
-          <h3 class="text-lg font-semibold text-[var(--color-text)]">Usage Stats</h3>
-          <div class="space-y-4">
-            {#if $identityStore.tier === 'pro'}
-              <div class="flex items-center gap-2 text-purple-400">
+          <section class="p-6 bg-[var(--color-panel)] rounded-sm space-y-4">
+            <h3 class="text-lg font-semibold text-[var(--color-text)]">Usage Stats</h3>
+            <div class="space-y-4">
+              {#if $identityStore.tier === 'pro'}
+                <div class="flex items-center gap-2 text-[var(--color-magenta)]">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
                 </svg>
@@ -278,9 +278,9 @@
                     {imageUsage ? `${imageUsage.count} / ${imageUsage.limit}` : '0 / 50'} this month
                   </span>
                 </div>
-                <div class="w-full h-2 bg-[var(--color-surface)] rounded-full overflow-hidden">
-                  <div
-                    class="h-full bg-blue-500 transition-all duration-300"
+                  <div class="w-full h-2 bg-[var(--color-surface)] rounded overflow-hidden">
+                    <div
+                      class="h-full bg-[var(--color-cyan)] shadow-[var(--glow-cyan)] transition-all duration-300"
                     style="width: {imageUsage ? getUsagePercentage(imageUsage) : 0}%"
                   ></div>
                 </div>

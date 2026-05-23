@@ -49,7 +49,7 @@
     {#each mapKeys as mapKey}
       {@const mapPath = mapPaths[mapKey]}
       <div class="flex flex-col items-center">
-        <div class="w-full aspect-square rounded-lg border border-[var(--color-surface)] overflow-hidden bg-[var(--color-surface)]">
+        <div class="w-full aspect-square rounded-sm border border-[var(--color-surface)] overflow-hidden bg-[var(--color-surface)]">
           {#if mapPath}
             <img
               src={convertFileSrc(mapPath)}

@@ -84,7 +84,7 @@
     <h1 class="text-2xl font-bold">Projects</h1>
     <button
       onclick={() => (showCreateDialog = true)}
-      class="flex items-center gap-2 px-4 py-2 bg-[var(--color-accent)] hover:bg-[var(--color-accent)]/80 rounded-lg transition-colors font-medium"
+      class="flex items-center gap-2 px-4 py-2 bg-[var(--color-neon)] hover:shadow-[var(--glow-neon)] text-[#0A0A0F] font-bold rounded-sm transition-all"
     >
       <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
@@ -104,15 +104,15 @@
     {:else}
       <div class="flex flex-col items-center justify-center h-full text-center">
         <div class="w-24 h-24 rounded-full bg-[var(--color-panel)] flex items-center justify-center mb-4">
-          <svg class="w-12 h-12 text-[var(--color-text-muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg class="w-12 h-12 text-[var(--color-muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
           </svg>
         </div>
         <h2 class="text-xl font-semibold mb-2">No projects yet</h2>
-        <p class="text-[var(--color-text-muted)] mb-4">Create your first project to get started</p>
+        <p class="text-[var(--color-muted)] mb-4">Create your first project to get started</p>
         <button
           onclick={() => (showCreateDialog = true)}
-          class="flex items-center gap-2 px-4 py-2 bg-[var(--color-accent)] hover:bg-[var(--color-accent)]/80 rounded-lg transition-colors font-medium"
+          class="flex items-center gap-2 px-4 py-2 bg-[var(--color-neon)] hover:shadow-[var(--glow-neon)] text-[#0A0A0F] font-bold rounded-sm transition-all"
         >
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
@@ -127,7 +127,7 @@
 <!-- Context Menu -->
 {#if showContextMenu && contextMenuProject}
   <div
-    class="fixed z-50 bg-[var(--color-panel)] border border-[var(--color-surface)] rounded-lg shadow-xl py-1 min-w-[160px]"
+    class="fixed z-50 bg-[var(--color-panel)] border border-[var(--color-surface)] rounded-sm shadow-xl py-1 min-w-[160px]"
     style="left: {contextMenuPosition.x}px; top: {contextMenuPosition.y}px"
   >
     <button
@@ -150,7 +150,7 @@
     </button>
     <button
       onclick={handleDelete}
-      class="w-full px-4 py-2 text-left hover:bg-[var(--color-surface)] transition-colors flex items-center gap-2 text-red-400"
+      class="w-full px-4 py-2 text-left hover:bg-[var(--color-surface)] transition-colors flex items-center gap-2 text-[var(--color-destructive)]"
     >
       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -161,9 +161,8 @@
 {/if}
 
 <!-- Create Project Dialog -->
-{#if showCreateDialog}
-  <CreateProjectDialog
-    onClose={() => (showCreateDialog = false)}
-    onProjectCreated={handleProjectCreated}
-  />
-{/if}
+<CreateProjectDialog
+  open={showCreateDialog}
+  onClose={() => (showCreateDialog = false)}
+  onProjectCreated={handleProjectCreated}
+/>

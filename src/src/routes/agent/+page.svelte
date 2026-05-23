@@ -83,7 +83,7 @@
     <div class="flex items-center gap-4">
       <select
         bind:value={engine}
-        class="px-3 py-2 rounded-lg bg-[var(--color-surface)] border border-[var(--color-border)]"
+        class="px-3 py-2 rounded-sm bg-[var(--color-panel)] border border-[var(--color-surface)]"
         disabled={agentState.loading}
       >
         <option value="godot">Godot</option>
@@ -97,11 +97,11 @@
     <div class="px-6 py-3 bg-[var(--color-surface)] border-b border-[var(--color-border)]">
       <div class="flex items-center justify-between mb-2">
         <span class="text-sm font-medium">{getPhaseLabel(agentState.currentPhase)}</span>
-        <span class="text-sm text-[var(--color-text-muted)]">{agentState.stepName || ''}</span>
+        <span class="text-sm text-[var(--color-muted)]">{agentState.stepName || ''}</span>
       </div>
-      <div class="w-full h-2 bg-[var(--color-panel)] rounded-full overflow-hidden">
+      <div class="w-full h-2 bg-[var(--color-panel)] rounded overflow-hidden">
         <div
-          class="h-full bg-[var(--color-accent)] transition-all duration-300"
+          class="h-full bg-[var(--color-cyan)] shadow-[var(--glow-cyan)] transition-all duration-300"
           style="width: {agentState.percent}%"
         ></div>
       </div>
@@ -110,7 +110,7 @@
 
   <!-- Error Display -->
   {#if agentState.error}
-    <div class="mx-6 mt-3 p-3 rounded-lg bg-red-500/20 border border-red-500/50 text-red-400 text-sm">
+    <div class="mx-6 mt-3 p-3 rounded-sm bg-[var(--color-destructive)]/20 border border-[var(--color-destructive)]/50 text-[var(--color-destructive)] text-sm">
       {agentState.error}
     </div>
   {/if}
@@ -120,18 +120,18 @@
     {#if agentState.messages.length === 0}
       <div class="flex flex-col items-center justify-center h-full text-center">
         <div class="w-24 h-24 rounded-full bg-[var(--color-panel)] flex items-center justify-center mb-4">
-          <svg class="w-12 h-12 text-[var(--color-text-muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg class="w-12 h-12 text-[var(--color-muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
           </svg>
         </div>
         <h2 class="text-xl font-semibold mb-2">Code Agent</h2>
-        <p class="text-[var(--color-text-muted)] mb-4">Describe what you want to build and the agent will create it step by step</p>
+        <p class="text-[var(--color-muted)] mb-4">Describe what you want to build and the agent will create it step by step</p>
       </div>
     {:else}
       <div class="space-y-4">
         {#each agentState.messages as message, i}
           <div class="flex {message.role === 'user' ? 'justify-end' : 'justify-start'}">
-            <div class="max-w-[70%] rounded-lg p-4 {message.role === 'user' ? 'bg-[var(--color-accent)] text-white' : 'bg-[var(--color-surface)]'}">
+            <div class="max-w-[70%] rounded-sm p-4 {message.role === 'user' ? 'bg-[var(--color-neon)] text-[#0A0A0F] font-bold' : 'bg-[var(--color-surface)]'}">
               <div class="text-xs opacity-70 mb-1 capitalize">{message.role}</div>
               <div class="prose prose-sm max-w-none whitespace-pre-wrap">{message.content}</div>
             </div>
@@ -148,19 +148,19 @@
         bind:value={prompt}
         onkeydown={handleKeydown}
         placeholder="Describe what you want to build..."
-        class="flex-1 min-h-[80px] px-4 py-3 rounded-lg bg-[var(--color-surface)] border border-[var(--color-border)] resize-none"
+        class="flex-1 min-h-[80px] px-4 py-3 rounded-sm bg-[var(--color-panel)] border border-[var(--color-surface)] focus:border-[var(--color-neon)] focus:shadow-[var(--glow-neon)] focus:outline-none resize-none transition-all"
         disabled={agentState.loading || !$selectedProject}
       ></textarea>
       <button
         onclick={handleSubmit}
         disabled={agentState.loading || !$selectedProject || prompt.trim().isEmpty()}
-        class="px-6 py-3 bg-[var(--color-accent)] hover:bg-[var(--color-accent)]/80 disabled:bg-[var(--color-surface)] disabled:cursor-not-allowed rounded-lg font-medium transition-colors"
+        class="px-6 py-3 bg-[var(--color-neon)] hover:shadow-[var(--glow-neon)] text-[#0A0A0F] font-bold disabled:bg-[var(--color-surface)] disabled:cursor-not-allowed rounded-sm transition-all"
       >
         {agentState.loading ? 'Running...' : 'Send'}
       </button>
     </div>
     {#if !$selectedProject}
-      <p class="mt-2 text-sm text-[var(--color-text-muted)]">Select a project first</p>
+      <p class="mt-2 text-sm text-[var(--color-muted)]">Select a project first</p>
     {/if}
   </footer>
 </div>

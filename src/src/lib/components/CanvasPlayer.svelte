@@ -141,7 +141,7 @@
 
 <div class="flex flex-col gap-4">
   <!-- Canvas -->
-  <div class="relative bg-black rounded-lg overflow-hidden" style="aspect-ratio: 16/9;">
+  <div class="relative bg-black rounded-sm overflow-hidden" style="aspect-ratio: 16/9;">
     <canvas
       bind:this={canvas}
       width={512}
@@ -161,7 +161,7 @@
     {#if isPlaying}
       <button
         onclick={pausePlayback}
-        class="p-2 rounded-lg bg-[var(--color-surface)] hover:bg-[var(--color-surface)]/80 transition-colors"
+        class="p-2 rounded-sm bg-[var(--color-surface)] hover:bg-[var(--color-surface)]/80 transition-colors"
         title="Pause"
       >
         <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
@@ -171,7 +171,7 @@
     {:else}
       <button
         onclick={startPlayback}
-        class="p-2 rounded-lg bg-[var(--color-surface)] hover:bg-[var(--color-surface)]/80 transition-colors"
+        class="p-2 rounded-sm bg-[var(--color-surface)] hover:bg-[var(--color-surface)]/80 transition-colors"
         title="Play"
       >
         <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
@@ -183,7 +183,7 @@
     <!-- Stop -->
     <button
       onclick={stopPlayback}
-      class="p-2 rounded-lg bg-[var(--color-surface)] hover:bg-[var(--color-surface)]/80 transition-colors"
+      class="p-2 rounded-sm bg-[var(--color-surface)] hover:bg-[var(--color-surface)]/80 transition-colors"
       title="Stop"
     >
       <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
@@ -194,7 +194,7 @@
     <!-- Loop toggle -->
     <button
       onclick={toggleLoop}
-      class="p-2 rounded-lg transition-colors {loop ? 'bg-[var(--color-accent)]' : 'bg-[var(--color-surface)]'} hover:opacity-80"
+      class="p-2 rounded-sm transition-all {loop ? 'bg-[var(--color-neon)] text-[#0A0A0F]' : 'bg-[var(--color-surface)]'} hover:opacity-80"
       title="Loop"
     >
       <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -207,7 +207,7 @@
       {#each speedOptions as s}
         <button
           onclick={() => setSpeed(s)}
-          class="px-2 py-1 rounded text-xs font-mono transition-colors {speed === s ? 'bg-[var(--color-accent)]' : 'bg-[var(--color-surface)]'} hover:opacity-80"
+          class="px-2 py-1 rounded-sm text-xs font-mono transition-all {speed === s ? 'bg-[var(--color-neon)] text-[#0A0A0F]' : 'bg-[var(--color-surface)]'} hover:opacity-80"
         >
           {s}×
         </button>

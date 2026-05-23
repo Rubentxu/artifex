@@ -68,20 +68,20 @@
     <button
       type="button"
       onclick={() => (showCreateForm = !showCreateForm)}
-      class="px-3 py-1.5 text-sm bg-[var(--color-accent)] hover:bg-[var(--color-accent)]/80 rounded-lg transition-colors"
+      class="px-3 py-1.5 text-sm bg-[var(--color-neon)] hover:shadow-[var(--glow-neon)] text-[#0A0A0F] font-bold rounded-sm transition-all"
     >
       {showCreateForm ? 'Cancel' : '+ New Template'}
     </button>
   </div>
 
   {#if error}
-    <div class="p-3 rounded-lg bg-red-500/20 border border-red-500/50 text-red-400 text-sm">
+    <div class="p-3 rounded-sm bg-[var(--color-destructive)]/20 border border-[var(--color-destructive)]/50 text-[var(--color-destructive)] text-sm">
       {error}
     </div>
   {/if}
 
   {#if showCreateForm}
-    <div class="p-4 bg-[var(--color-surface)] rounded-lg space-y-3">
+    <div class="p-4 bg-[var(--color-surface)] rounded-sm space-y-3">
       <div>
         <label for="template-name" class="block text-sm font-medium text-[var(--color-text)] mb-1">Name</label>
         <input
@@ -89,7 +89,7 @@
           type="text"
           bind:value={newName}
           placeholder="e.g., NPC Dialogue"
-          class="w-full px-3 py-2 bg-[var(--color-panel)] border border-[var(--color-surface)] rounded-lg text-[var(--color-text)] placeholder:text-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-accent)]"
+          class="w-full px-3 py-2 bg-[var(--color-panel)] border border-[var(--color-surface)] rounded-sm text-[var(--color-text)] placeholder:text-[var(--color-muted)] focus:outline-none focus:border-[var(--color-neon)] focus:shadow-[var(--glow-neon)] transition-all"
         />
       </div>
 
@@ -102,7 +102,7 @@
           bind:value={newTemplate}
           placeholder={"e.g., You are {{character}}, in a {{setting}}. Say: {{dialogue}}"}
           rows="4"
-          class="w-full px-3 py-2 bg-[var(--color-panel)] border border-[var(--color-surface)] rounded-lg text-[var(--color-text)] placeholder:text-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-accent)] resize-none"
+          class="w-full px-3 py-2 bg-[var(--color-panel)] border border-[var(--color-surface)] rounded-sm text-[var(--color-text)] placeholder:text-[var(--color-muted)] focus:outline-none focus:border-[var(--color-neon)] focus:shadow-[var(--glow-neon)] resize-none transition-all"
         ></textarea>
       </div>
 
@@ -110,7 +110,7 @@
         type="button"
         onclick={handleCreate}
         disabled={creating}
-        class="w-full px-4 py-2 bg-[var(--color-accent)] hover:bg-[var(--color-accent)]/80 rounded-lg transition-colors disabled:opacity-50"
+        class="w-full px-4 py-2 bg-[var(--color-neon)] hover:shadow-[var(--glow-neon)] text-[#0A0A0F] font-bold rounded-sm transition-all disabled:opacity-50"
       >
         {creating ? 'Creating...' : 'Create Template'}
       </button>
@@ -122,7 +122,7 @@
   {:else}
     <div class="space-y-2">
       {#each templates as template (template.id)}
-        <div class="p-4 bg-[var(--color-surface)] rounded-lg">
+        <div class="p-4 bg-[var(--color-surface)] rounded-sm">
           <div class="flex items-start justify-between gap-4">
             <div class="flex-1 min-w-0">
               <div class="font-medium text-[var(--color-text)]">{template.name}</div>

@@ -75,7 +75,7 @@
   }
 </script>
 
-<div class="space-y-3 p-4 bg-[var(--color-surface)] rounded-lg">
+<div class="space-y-3 p-4 bg-[var(--color-surface)] rounded-sm">
   <div class="flex items-center justify-between">
     <div class="flex items-center gap-2">
       <span class="font-medium text-[var(--color-text)]">{providerName}</span>
@@ -102,7 +102,7 @@
       type={showKey ? 'text' : 'password'}
       bind:value={apiKey}
       placeholder="Enter API key..."
-      class="w-full px-3 py-2 pr-20 bg-[var(--color-panel)] border border-[var(--color-surface)] rounded-lg text-[var(--color-text)] placeholder:text-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-accent)]"
+      class="w-full px-3 py-2 pr-20 bg-[var(--color-canvas)] border border-[var(--color-surface)] rounded-sm text-[var(--color-text)] placeholder:text-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-accent)]"
     />
     <button
       type="button"
@@ -137,7 +137,7 @@
         type="button"
         onclick={handleDelete}
         disabled={deleting}
-        class="flex-1 px-3 py-1.5 text-sm bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        class="flex-1 px-3 py-1.5 text-sm bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {deleting ? 'Deleting...' : 'Delete'}
       </button>
@@ -146,7 +146,7 @@
       type="button"
       onclick={handleTest}
       disabled={testing || (!hasCredential && !apiKey.trim())}
-      class="flex-1 px-3 py-1.5 text-sm bg-[var(--color-panel)] hover:bg-[var(--color-panel)]/80 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+      class="flex-1 px-3 py-1.5 text-sm bg-[var(--color-panel)] hover:bg-[var(--color-panel)]/80 rounded-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
     >
       {testing ? 'Testing...' : 'Test Connection'}
     </button>
@@ -154,7 +154,7 @@
       type="button"
       onclick={handleSave}
       disabled={saving || !apiKey.trim()}
-      class="flex-1 px-3 py-1.5 text-sm bg-[var(--color-accent)] hover:bg-[var(--color-accent)]/80 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+      class="flex-1 px-3 py-1.5 text-sm bg-[var(--color-neon)] hover:shadow-[var(--glow-neon)] text-[#0A0A0F] font-bold rounded-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
     >
       {saving ? 'Saving...' : 'Save'}
     </button>

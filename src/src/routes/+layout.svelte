@@ -24,7 +24,7 @@
   </AppShell>
 {:else}
   <!-- Loading state -->
-  <div class="h-screen w-screen flex items-center justify-center bg-[var(--color-canvas)]">
-    <div class="text-[var(--color-text-muted)]">Loading...</div>
+  <div class="h-screen w-screen flex items-center justify-center bg-[var(--color-void)]">
+    <div class="text-[var(--color-muted)]">Loading...</div>
   </div>
 {/if}

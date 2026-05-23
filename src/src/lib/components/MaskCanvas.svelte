@@ -176,7 +176,7 @@
 <div class="flex flex-col gap-4">
   <!-- Canvas container with fixed dimensions -->
   <div
-    class="relative border border-[var(--color-surface)] rounded-lg overflow-hidden"
+    class="relative border border-[var(--color-surface)] rounded-sm overflow-hidden"
     style="width: {width}px; height: {height}px;"
   >
     <canvas
@@ -210,18 +210,18 @@
     <div class="flex items-center gap-1">
       <button
         onclick={setBrush}
-        class="px-3 py-1 rounded text-sm font-medium transition-colors"
-        class:bg-[var(--color-accent)]={currentMode === 'brush'}
-        class:text-white={currentMode === 'brush'}
+        class="px-3 py-1 rounded-sm text-sm font-medium transition-all"
+        class:bg-[var(--color-neon)]={currentMode === 'brush'}
+        class:text-[#0A0A0F]={currentMode === 'brush'}
         class:bg-[var(--color-surface)]={currentMode !== 'brush'}
       >
         Brush
       </button>
       <button
         onclick={setEraser}
-        class="px-3 py-1 rounded text-sm font-medium transition-colors"
-        class:bg-[var(--color-accent)]={currentMode === 'eraser'}
-        class:text-white={currentMode === 'eraser'}
+        class="px-3 py-1 rounded-sm text-sm font-medium transition-all"
+        class:bg-[var(--color-neon)]={currentMode === 'eraser'}
+        class:text-[#0A0A0F]={currentMode === 'eraser'}
         class:bg-[var(--color-surface)]={currentMode !== 'eraser'}
       >
         Eraser

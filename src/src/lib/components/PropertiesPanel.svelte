@@ -2,6 +2,7 @@
   import { propertiesCollapsed, toggleProperties } from '$lib/stores/ui';
   import { selectedProject } from '$lib/stores/project';
   import { selectedAsset } from '$lib/stores/asset';
+  import Badge from '$lib/components/ui/Badge.svelte';
 
   interface GenerationMetadata {
     prompt?: string;
@@ -102,9 +103,7 @@
             Kind
           </label>
           <p class="mt-1">
-            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-500/20 text-blue-400">
-              {$selectedAsset.kind}
-            </span>
+            <Badge variant={$selectedAsset.kind.toLowerCase()}>{$selectedAsset.kind}</Badge>
           </p>
         </div>
 
@@ -139,7 +138,7 @@
         <!-- Generation Metadata (for generated images) -->
         {#if genMetadata}
           <div class="border-t border-[var(--color-surface)] pt-4">
-            <label class="text-xs font-semibold text-[var(--color-accent)] uppercase tracking-wider">
+            <label class="text-xs font-semibold text-[var(--color-neon)] uppercase tracking-wider">
               Generation Info
             </label>
             <div class="mt-2 space-y-2">
@@ -209,7 +208,7 @@
               {#if onRemoveBackground}
                 <button
                   onclick={() => onRemoveBackground($selectedAsset.id)}
-                  class="w-full px-3 py-2 rounded-lg bg-[var(--color-surface)] hover:bg-[var(--color-surface)]/80 transition-colors text-sm font-medium text-left flex items-center gap-2"
+                  class="w-full px-3 py-2 rounded-sm bg-[var(--color-surface)] hover:bg-[var(--color-surface)]/80 transition-colors text-sm font-medium text-left flex items-center gap-2"
                 >
                   <svg class="w-4 h-4 text-[var(--color-text-muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -220,7 +219,7 @@
               {#if onConvertPixelArt}
                 <button
                   onclick={() => onConvertPixelArt($selectedAsset.id)}
-                  class="w-full px-3 py-2 rounded-lg bg-[var(--color-surface)] hover:bg-[var(--color-surface)]/80 transition-colors text-sm font-medium text-left flex items-center gap-2"
+                  class="w-full px-3 py-2 rounded-sm bg-[var(--color-surface)] hover:bg-[var(--color-surface)]/80 transition-colors text-sm font-medium text-left flex items-center gap-2"
                 >
                   <svg class="w-4 h-4 text-[var(--color-text-muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" />
@@ -256,11 +255,7 @@
             Status
           </label>
           <p class="mt-1">
-            <span
-              class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium {$selectedProject.status === 'active' ? 'bg-green-500/20 text-green-400' : 'bg-yellow-500/20 text-yellow-400'}"
-            >
-              {$selectedProject.status}
-            </span>
+            <Badge status={$selectedProject.status}>{$selectedProject.status}</Badge>
           </p>
         </div>
 

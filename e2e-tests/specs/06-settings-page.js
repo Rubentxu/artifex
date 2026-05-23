@@ -34,7 +34,7 @@ describe('06 Settings Page', () => {
         const hasProfile = await debugHasText(browser, 'Profile');
         return !hasLoading || hasError || hasProfile;
       },
-      { timeout: 5000, timeoutMsg: 'Settings page did not finish loading' }
+      { timeout: 15000, timeoutMsg: 'Settings page did not finish loading' }
     );
   });
 

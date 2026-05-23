@@ -1,6 +1,7 @@
 <script lang="ts">
   import { convertFileSrc } from '@tauri-apps/api/core';
   import type { AssetResponse } from '$lib/types/asset';
+  import Badge from '$lib/components/ui/Badge.svelte';
 
   interface Props {
     asset: AssetResponse;
@@ -9,19 +10,6 @@
   }
 
   let { asset, selected, onclick }: Props = $props();
-
-  function getKindColor(kind: string): string {
-    switch (kind) {
-      case 'Image': return 'bg-blue-500/20 text-blue-400';
-      case 'Sprite': return 'bg-green-500/20 text-green-400';
-      case 'Tileset': return 'bg-purple-500/20 text-purple-400';
-      case 'Material': return 'bg-orange-500/20 text-orange-400';
-      case 'Audio': return 'bg-yellow-500/20 text-yellow-400';
-      case 'Voice': return 'bg-pink-500/20 text-pink-400';
-      case 'Video': return 'bg-red-500/20 text-red-400';
-      default: return 'bg-gray-500/20 text-gray-400';
-    }
-  }
 
   function formatFileSize(bytes: number | null): string {
     if (bytes === null) return 'Unknown';
@@ -53,12 +41,12 @@
 
 <button
   {onclick}
-  class="w-full text-left p-3 rounded-lg border transition-all duration-150 hover:border-[var(--color-accent)]/50 bg-[var(--color-panel)] hover:bg-[var(--color-panel)]/80 border-[var(--color-surface)]"
+  class="w-full text-left p-3 rounded-sm border transition-all duration-150 hover:border-[var(--color-neon)]/50 hover:shadow-[var(--glow-neon)] bg-[var(--color-panel)] hover:bg-[var(--color-panel)]/80 border-[var(--color-surface)]"
   class:ring-2={selected}
-  class:ring-[var(--color-accent)]={selected}
+  class:ring-[var(--color-neon)]={selected}
 >
   <!-- Thumbnail area -->
-  <div class="w-full aspect-video rounded bg-[var(--color-surface)] flex items-center justify-center mb-2 overflow-hidden">
+  <div class="w-full aspect-video rounded-sm bg-[var(--color-surface)] flex items-center justify-center mb-2 overflow-hidden">
     {#if asset.file_path && isImageAsset(asset.kind)}
       {@const src = getImageSrc(asset.file_path)}
       {#if src}
@@ -109,9 +97,7 @@
 
   <!-- Kind badge and size -->
   <div class="flex items-center justify-between">
-    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium {getKindColor(asset.kind)}">
-      {asset.kind}
-    </span>
+    <Badge variant={asset.kind.toLowerCase()}>{asset.kind}</Badge>
     {#if isAudioAsset(asset.kind) && asset.duration_secs}
       <span class="text-xs text-[var(--color-text-muted)]">
         {formatDuration(asset.duration_secs)}

@@ -208,7 +208,7 @@
     <div class="flex items-center gap-2">
       <button
         onclick={() => (showGenerateImageDialog = true)}
-        class="flex items-center gap-2 px-4 py-2 bg-[var(--color-accent)] hover:bg-[var(--color-accent)]/80 rounded-lg transition-colors font-medium"
+        class="flex items-center gap-2 px-4 py-2 bg-[var(--color-neon)] hover:shadow-[var(--glow-neon)] text-[#0A0A0F] font-bold rounded-sm transition-all"
         disabled={!$selectedProject}
         title={$selectedProject ? '' : 'Select a project first'}
       >
@@ -219,7 +219,7 @@
       </button>
       <button
         onclick={() => (showGenerateVideoDialog = true)}
-        class="flex items-center gap-2 px-4 py-2 bg-[var(--color-accent)] hover:bg-[var(--color-accent)]/80 rounded-lg transition-colors font-medium"
+        class="flex items-center gap-2 px-4 py-2 bg-[var(--color-neon)] hover:shadow-[var(--glow-neon)] text-[#0A0A0F] font-bold rounded-sm transition-all"
         disabled={!$selectedProject || imageAssets.length === 0}
         title={!$selectedProject ? 'Select a project first' : imageAssets.length === 0 ? 'No Image/Sprite assets available' : ''}
       >
@@ -230,7 +230,7 @@
       </button>
       <button
         onclick={() => (showGenerateAudioDialog = true)}
-        class="flex items-center gap-2 px-4 py-2 bg-[var(--color-surface)] hover:bg-[var(--color-surface)]/80 rounded-lg transition-colors font-medium"
+        class="flex items-center gap-2 px-4 py-2 bg-[var(--color-surface)] hover:bg-[var(--color-surface)]/80 rounded-sm transition-colors font-medium"
         disabled={!$selectedProject}
         title={$selectedProject ? '' : 'Select a project first'}
       >
@@ -240,19 +240,8 @@
         Generate Audio
       </button>
       <button
-        onclick={() => (showGenerateAudioDialog = true)}
-        class="flex items-center gap-2 px-4 py-2 bg-[var(--color-surface)] hover:bg-[var(--color-surface)]/80 rounded-lg transition-colors font-medium"
-        disabled={!$selectedProject}
-        title={$selectedProject ? '' : 'Select a project first'}
-      >
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
-        </svg>
-        Generate Audio
-      </button>
-      <button
         onclick={() => (showGenerateTileDialog = true)}
-        class="flex items-center gap-2 px-4 py-2 bg-[var(--color-surface)] hover:bg-[var(--color-surface)]/80 rounded-lg transition-colors font-medium"
+        class="flex items-center gap-2 px-4 py-2 bg-[var(--color-surface)] hover:bg-[var(--color-surface)]/80 rounded-sm transition-colors font-medium"
         disabled={!$selectedProject}
         title={$selectedProject ? '' : 'Select a project first'}
       >
@@ -263,7 +252,7 @@
       </button>
       <button
         onclick={handleGenerateSpriteSheet}
-        class="flex items-center gap-2 px-4 py-2 bg-[var(--color-surface)] hover:bg-[var(--color-surface)]/80 rounded-lg transition-colors font-medium"
+        class="flex items-center gap-2 px-4 py-2 bg-[var(--color-surface)] hover:bg-[var(--color-surface)]/80 rounded-sm transition-colors font-medium"
         disabled={!$selectedProject || videoAssets.length === 0}
         title={!$selectedProject ? 'Select a project first' : videoAssets.length === 0 ? 'No video assets available' : ''}
       >
@@ -274,7 +263,7 @@
       </button>
       <button
         onclick={handleSliceSpriteSheet}
-        class="flex items-center gap-2 px-4 py-2 bg-[var(--color-surface)] hover:bg-[var(--color-surface)]/80 rounded-lg transition-colors font-medium"
+        class="flex items-center gap-2 px-4 py-2 bg-[var(--color-surface)] hover:bg-[var(--color-surface)]/80 rounded-sm transition-colors font-medium"
         disabled={!$selectedProject || imageAssets.length === 0}
         title={!$selectedProject ? 'Select a project first' : imageAssets.length === 0 ? 'No image assets available' : ''}
       >
@@ -285,7 +274,7 @@
       </button>
       <button
         onclick={() => (showCreateAnimationDialog = true)}
-        class="flex items-center gap-2 px-4 py-2 bg-[var(--color-surface)] hover:bg-[var(--color-surface)]/80 rounded-lg transition-colors font-medium"
+        class="flex items-center gap-2 px-4 py-2 bg-[var(--color-surface)] hover:bg-[var(--color-surface)]/80 rounded-sm transition-colors font-medium"
         disabled={!$selectedProject || imageAssets.length === 0}
         title={!$selectedProject ? 'Select a project first' : imageAssets.length === 0 ? 'No image assets available' : ''}
       >
@@ -296,7 +285,7 @@
       </button>
       <button
         onclick={handlePackAtlas}
-        class="flex items-center gap-2 px-4 py-2 bg-[var(--color-surface)] hover:bg-[var(--color-surface)]/80 rounded-lg transition-colors font-medium"
+        class="flex items-center gap-2 px-4 py-2 bg-[var(--color-surface)] hover:bg-[var(--color-surface)]/80 rounded-sm transition-colors font-medium"
         disabled={!$selectedProject || packableAssets.length < 2}
         title={!$selectedProject ? 'Select a project first' : packableAssets.length < 2 ? 'Need at least 2 Image/Sprite/Tileset assets' : ''}
       >
@@ -307,7 +296,7 @@
       </button>
       <button
         onclick={handleQuickSprites}
-        class="flex items-center gap-2 px-4 py-2 bg-[var(--color-surface)] hover:bg-[var(--color-surface)]/80 rounded-lg transition-colors font-medium"
+        class="flex items-center gap-2 px-4 py-2 bg-[var(--color-surface)] hover:bg-[var(--color-surface)]/80 rounded-sm transition-colors font-medium"
         disabled={!$selectedProject}
         title={$selectedProject ? '' : 'Select a project first'}
       >
@@ -318,7 +307,7 @@
       </button>
       <button
         onclick={() => (showRender3dDialog = true)}
-        class="flex items-center gap-2 px-4 py-2 bg-[var(--color-surface)] hover:bg-[var(--color-surface)]/80 rounded-lg transition-colors font-medium"
+        class="flex items-center gap-2 px-4 py-2 bg-[var(--color-surface)] hover:bg-[var(--color-surface)]/80 rounded-sm transition-colors font-medium"
         disabled={!$selectedProject}
         title={$selectedProject ? '' : 'Select a project first'}
       >
@@ -329,7 +318,7 @@
       </button>
       <button
         onclick={() => (showGenerateCodeDialog = true)}
-        class="flex items-center gap-2 px-4 py-2 bg-[var(--color-surface)] hover:bg-[var(--color-surface)]/80 rounded-lg transition-colors font-medium"
+        class="flex items-center gap-2 px-4 py-2 bg-[var(--color-surface)] hover:bg-[var(--color-surface)]/80 rounded-sm transition-colors font-medium"
         disabled={!$selectedProject}
         title={$selectedProject ? '' : 'Select a project first'}
       >
@@ -340,7 +329,7 @@
       </button>
       <button
         onclick={handlePublish}
-        class="flex items-center gap-2 px-4 py-2 bg-[var(--color-accent)] hover:bg-[var(--color-accent)]/80 rounded-lg transition-colors font-medium"
+        class="flex items-center gap-2 px-4 py-2 bg-[var(--color-neon)] hover:bg-[var(--color-neon)]/80 rounded-sm transition-colors font-medium"
         disabled={!$selectedProject || $assetStore.assets.length === 0}
         title={!$selectedProject ? 'Select a project first' : $assetStore.assets.length === 0 ? 'No assets to export' : ''}
       >
@@ -351,7 +340,7 @@
       </button>
       <button
         onclick={handleImport}
-        class="flex items-center gap-2 px-4 py-2 bg-[var(--color-surface)] hover:bg-[var(--color-surface)]/80 rounded-lg transition-colors font-medium"
+        class="flex items-center gap-2 px-4 py-2 bg-[var(--color-surface)] hover:bg-[var(--color-surface)]/80 rounded-sm transition-colors font-medium"
         disabled={!$selectedProject}
         title={$selectedProject ? '' : 'Select a project first'}
       >
@@ -368,9 +357,9 @@
     {#each filterKinds as kind}
       <button
         onclick={() => handleFilterClick(kind)}
-        class="shrink-0 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors
+        class="shrink-0 px-3 py-1.5 rounded-sm text-sm font-medium transition-colors
           {($assetStore.filterKind === (kind === 'All' ? null : kind))
-            ? 'bg-[var(--color-accent)] text-white'
+            ? 'bg-[var(--color-neon)] text-white'
             : 'bg-[var(--color-surface)] hover:bg-[var(--color-surface)]/80 text-[var(--color-text)]'}"
       >
         {kind}
@@ -382,13 +371,13 @@
   {#if $selectedProject && $assetStore.selectedId}
     {@const selectedAssetData = $filteredAssets.find(a => a.id === $assetStore.selectedId)}
     {#if selectedAssetData && (selectedAssetData.kind === 'Image' || selectedAssetData.kind === 'Sprite' || selectedAssetData.kind === 'Tileset' || selectedAssetData.kind === 'Material')}
-      <div class="flex items-center gap-2 px-6 py-2 bg-[var(--color-accent)]/10 border-b border-[var(--color-accent)]/20">
+      <div class="flex items-center gap-2 px-6 py-2 bg-[var(--color-neon)]/10 border-b border-[var(--color-accent)]/20">
         <span class="text-sm text-[var(--color-accent)] font-medium">Selected:</span>
         <span class="text-sm truncate max-w-xs">{selectedAssetData.name}</span>
         <div class="flex items-center gap-2 ml-auto">
           <button
             onclick={() => handleRemoveBackground($assetStore.selectedId!)}
-            class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--color-surface)] hover:bg-[var(--color-surface)]/80 transition-colors text-sm font-medium"
+            class="flex items-center gap-1.5 px-3 py-1.5 rounded-sm bg-[var(--color-surface)] hover:bg-[var(--color-surface)]/80 transition-colors text-sm font-medium"
           >
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -397,7 +386,7 @@
           </button>
           <button
             onclick={() => handleConvertPixelArt($assetStore.selectedId!)}
-            class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--color-surface)] hover:bg-[var(--color-surface)]/80 transition-colors text-sm font-medium"
+            class="flex items-center gap-1.5 px-3 py-1.5 rounded-sm bg-[var(--color-surface)] hover:bg-[var(--color-surface)]/80 transition-colors text-sm font-medium"
           >
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" />
@@ -406,7 +395,7 @@
           </button>
           <button
             onclick={() => handleInpaint($assetStore.selectedId!)}
-            class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--color-surface)] hover:bg-[var(--color-surface)]/80 transition-colors text-sm font-medium"
+            class="flex items-center gap-1.5 px-3 py-1.5 rounded-sm bg-[var(--color-surface)] hover:bg-[var(--color-surface)]/80 transition-colors text-sm font-medium"
           >
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
@@ -415,7 +404,7 @@
           </button>
           <button
             onclick={() => handleOutpaint($assetStore.selectedId!)}
-            class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--color-surface)] hover:bg-[var(--color-surface)]/80 transition-colors text-sm font-medium"
+            class="flex items-center gap-1.5 px-3 py-1.5 rounded-sm bg-[var(--color-surface)] hover:bg-[var(--color-surface)]/80 transition-colors text-sm font-medium"
           >
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
@@ -425,7 +414,7 @@
           {#if selectedAssetData?.kind === 'Image'}
             <button
               onclick={() => handleGenerateMaterial($assetStore.selectedId!)}
-              class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--color-surface)] hover:bg-[var(--color-surface)]/80 transition-colors text-sm font-medium"
+              class="flex items-center gap-1.5 px-3 py-1.5 rounded-sm bg-[var(--color-surface)] hover:bg-[var(--color-surface)]/80 transition-colors text-sm font-medium"
             >
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" />
@@ -435,7 +424,7 @@
           {/if}
           <button
             onclick={() => handleSeamlessTexture($assetStore.selectedId!)}
-            class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--color-surface)] hover:bg-[var(--color-surface)]/80 transition-colors text-sm font-medium"
+            class="flex items-center gap-1.5 px-3 py-1.5 rounded-sm bg-[var(--color-surface)] hover:bg-[var(--color-surface)]/80 transition-colors text-sm font-medium"
           >
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" />
@@ -449,7 +438,7 @@
 
   <!-- Error display -->
   {#if importError}
-    <div class="mx-6 mt-3 p-3 rounded-lg bg-red-500/20 border border-red-500/50 text-red-400 text-sm">
+    <div class="mx-6 mt-3 p-3 rounded-sm bg-[var(--color-destructive)]/20 border border-[var(--color-destructive)]/50 text-[var(--color-destructive)] text-sm">
       {importError}
     </div>
   {/if}
@@ -459,12 +448,12 @@
     {#if !$selectedProject}
       <div class="flex flex-col items-center justify-center h-full text-center">
         <div class="w-24 h-24 rounded-full bg-[var(--color-panel)] flex items-center justify-center mb-4">
-          <svg class="w-12 h-12 text-[var(--color-text-muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg class="w-12 h-12 text-[var(--color-muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
           </svg>
         </div>
         <h2 class="text-xl font-semibold mb-2">No project selected</h2>
-        <p class="text-[var(--color-text-muted)]">Select a project to view its assets</p>
+        <p class="text-[var(--color-muted)]">Select a project to view its assets</p>
       </div>
     {:else if selectedAnimationAsset}
       <!-- Show Animation Editor when an animation is selected -->
@@ -487,16 +476,16 @@
     {:else}
       <div class="flex flex-col items-center justify-center h-full text-center">
         <div class="w-24 h-24 rounded-full bg-[var(--color-panel)] flex items-center justify-center mb-4">
-          <svg class="w-12 h-12 text-[var(--color-text-muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg class="w-12 h-12 text-[var(--color-muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
           </svg>
         </div>
         <h2 class="text-xl font-semibold mb-2">No assets yet</h2>
-        <p class="text-[var(--color-text-muted)] mb-4">Import files or generate images to get started</p>
+        <p class="text-[var(--color-muted)] mb-4">Import files or generate images to get started</p>
         <div class="flex gap-2">
           <button
             onclick={handleImport}
-            class="flex items-center gap-2 px-4 py-2 bg-[var(--color-surface)] hover:bg-[var(--color-surface)]/80 rounded-lg transition-colors font-medium"
+            class="flex items-center gap-2 px-4 py-2 bg-[var(--color-surface)] hover:bg-[var(--color-surface)]/80 rounded-sm transition-colors font-medium"
           >
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
@@ -505,7 +494,7 @@
           </button>
           <button
             onclick={() => (showGenerateImageDialog = true)}
-            class="flex items-center gap-2 px-4 py-2 bg-[var(--color-accent)] hover:bg-[var(--color-accent)]/80 rounded-lg transition-colors font-medium"
+            class="flex items-center gap-2 px-4 py-2 bg-[var(--color-neon)] hover:bg-[var(--color-neon)]/80 rounded-sm transition-colors font-medium"
           >
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
@@ -514,7 +503,7 @@
           </button>
           <button
             onclick={() => (showGenerateAudioDialog = true)}
-            class="flex items-center gap-2 px-4 py-2 bg-[var(--color-surface)] hover:bg-[var(--color-surface)]/80 rounded-lg transition-colors font-medium"
+            class="flex items-center gap-2 px-4 py-2 bg-[var(--color-surface)] hover:bg-[var(--color-surface)]/80 rounded-sm transition-colors font-medium"
           >
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
@@ -523,7 +512,7 @@
           </button>
           <button
             onclick={() => (showGenerateTileDialog = true)}
-            class="flex items-center gap-2 px-4 py-2 bg-[var(--color-surface)] hover:bg-[var(--color-surface)]/80 rounded-lg transition-colors font-medium"
+            class="flex items-center gap-2 px-4 py-2 bg-[var(--color-surface)] hover:bg-[var(--color-surface)]/80 rounded-sm transition-colors font-medium"
           >
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" />

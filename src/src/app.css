@@ -1,13 +1,32 @@
 @import "tailwindcss";
 
 :root {
-  --color-canvas: #1a1a2e;
-  --color-panel: #16213e;
-  --color-surface: #0f3460;
-  --color-accent: #e94560;
-  --color-text: #eaeaea;
-  --color-text-muted: #9ca3af;
+  /* Cyberpunk Color Palette */
+  --color-void: #0A0A0F;
+  --color-panel: #12121A;
+  --color-surface: #2A2A3A;
+  --color-neon: #00FF88;
+  --color-accent: var(--color-neon);
+  --color-cyan: #00D4FF;
+  --color-magenta: #FF00FF;
+  --color-text: #E0E0E0;
+  --color-muted: #6B7280;
+  --color-destructive: #FF3366;
+
+  /* Aliases for backward compatibility */
+  --color-canvas: var(--color-void);
+  --color-text-muted: var(--color-muted);
+  --color-border: var(--color-surface);
+
+  /* Typography */
   --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-heading: 'Orbitron', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  /* Glow Effects */
+  --glow-neon: 0 0 10px rgba(0, 255, 136, 0.4);
+  --glow-cyan: 0 0 10px rgba(0, 212, 255, 0.4);
+  --glow-magenta: 0 0 10px rgba(255, 0, 255, 0.4);
 }
 
 * {
@@ -20,7 +39,22 @@ html,
 body {
   height: 100%;
   font-family: var(--font-sans);
-  background-color: var(--color-canvas);
+  background-color: var(--color-void);
   color: var(--color-text);
   overflow: hidden;
+}
+
+/* Scanline overlay */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 255, 136, 0.03) 0px,
+    transparent 1px,
+    transparent 3px
+  );
+  z-index: 9999;
 }

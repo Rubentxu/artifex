@@ -123,9 +123,9 @@
       {#each (['all', 'running', 'completed', 'failed'] as StatusFilter[]) as filter}
         <button
           onclick={() => (statusFilter = filter)}
-          class="px-3 py-1 rounded text-xs font-medium transition-colors {statusFilter === filter
-            ? 'bg-[var(--color-accent)] text-white'
-            : 'bg-[var(--color-surface)] hover:bg-[var(--color-surface)]/80 text-[var(--color-text-muted)]'}"
+          class="px-3 py-1 rounded-sm text-xs font-medium transition-all {statusFilter === filter
+            ? 'bg-[var(--color-neon)] text-[#0A0A0F] font-bold'
+            : 'bg-[var(--color-surface)] hover:opacity-80 text-[var(--color-muted)]'}"
         >
           {filter.charAt(0).toUpperCase() + filter.slice(1)}
         </button>
@@ -146,7 +146,7 @@
       <div class="space-y-2">
         {#each jobs as job (job.id)}
           {@const badge = statusBadge(job.status)}
-          <div class="flex items-center gap-3 p-3 rounded-lg bg-[var(--color-panel)] border border-[var(--color-surface)]">
+          <div class="flex items-center gap-3 p-3 rounded-sm bg-[var(--color-panel)] border border-[var(--color-surface)]">
             <span class="text-lg">{jobTypeIcon(job.job_type)}</span>
             <div class="flex-1 min-w-0">
               <div class="flex items-center gap-2">

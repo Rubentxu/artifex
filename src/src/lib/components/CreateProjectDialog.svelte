@@ -2,14 +2,17 @@
   import { createEventDispatcher } from 'svelte';
   import { createProject, listProjects } from '$lib/api/projects';
   import type { ProjectResponse } from '$lib/types';
-  import { open } from '@tauri-apps/plugin-dialog';
+  import { open as openDialog } from '@tauri-apps/plugin-dialog';
+  import Dialog from '$lib/components/ui/Dialog.svelte';
+  import Button from '$lib/components/ui/Button.svelte';
 
   interface Props {
+    open: boolean;
     onClose: () => void;
     onProjectCreated: (project: ProjectResponse) => void;
   }
 
-  let { onClose, onProjectCreated }: Props = $props();
+  let { open, onClose, onProjectCreated }: Props = $props();
 
   let name = $state('');
   let path = $state('');
@@ -18,7 +21,7 @@
 
   async function handleBrowse() {
     try {
-      const selected = await open({
+      const selected = await openDialog({
         directory: true,
         multiple: false,
         title: 'Select project directory',
@@ -48,7 +51,7 @@
     try {
       const project = await createProject(name.trim(), path.trim());
       onProjectCreated(project);
-      onClose();
+      handleClose();
     } catch (e) {
       error = e instanceof Error ? e.message : String(e);
     } finally {
@@ -56,106 +59,71 @@
     }
   }
 
-  function handleKeydown(event: KeyboardEvent) {
-    if (event.key === 'Escape') {
-      onClose();
-    }
+  function handleClose() {
+    name = '';
+    path = '';
+    error = null;
+    loading = false;
+    onClose();
   }
 </script>
 
-<svelte:window onkeydown={handleKeydown} />
-
-<!-- Backdrop -->
-<div
-  class="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
-  onclick={onClose}
-  role="dialog"
-  aria-modal="true"
+<Dialog
+  {open}
+  onClose={handleClose}
+  title="Create New Project"
+  width="md"
+  bordered
+  {error}
 >
-  <!-- Dialog -->
-  <div
-    class="bg-[var(--color-panel)] rounded-xl shadow-2xl w-full max-w-md mx-4 border border-[var(--color-surface)]"
-    onclick={(e) => e.stopPropagation()}
-  >
-    <!-- Header -->
-    <div class="flex items-center justify-between p-4 border-b border-[var(--color-surface)]">
-      <h2 class="text-lg font-semibold">Create New Project</h2>
-      <button
-        onclick={onClose}
-        class="p-1 rounded hover:bg-[var(--color-surface)] transition-colors text-[var(--color-text-muted)]"
-      >
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-        </svg>
-      </button>
+  <form onsubmit={(e) => { e.preventDefault(); handleSubmit(); }} class="space-y-4">
+    <!-- Name -->
+    <div>
+      <label for="project-name" class="block text-sm font-medium mb-1">
+        Project Name <span class="text-[var(--color-destructive)]">*</span>
+      </label>
+      <input
+        id="project-name"
+        type="text"
+        bind:value={name}
+        placeholder="My Awesome Game"
+        class="w-full px-3 py-2 rounded-sm bg-[var(--color-canvas)] border border-[var(--color-surface)] focus:border-[var(--color-neon)] focus:shadow-[var(--glow-neon)] focus:outline-none text-[var(--color-text)] placeholder:text-[var(--color-muted)]"
+        maxlength="128"
+        required
+      />
     </div>
 
-    <!-- Form -->
-    <form onsubmit={(e) => { e.preventDefault(); handleSubmit(); }} class="p-4 space-y-4">
-      {#if error}
-        <div class="p-3 rounded-lg bg-red-500/20 border border-red-500/50 text-red-400 text-sm">
-          {error}
-        </div>
-      {/if}
-
-      <!-- Name -->
-      <div>
-        <label for="project-name" class="block text-sm font-medium mb-1">
-          Project Name <span class="text-red-400">*</span>
-        </label>
+    <!-- Path -->
+    <div>
+      <label for="project-path" class="block text-sm font-medium mb-1">
+        Project Path <span class="text-[var(--color-destructive)]">*</span>
+      </label>
+      <div class="flex gap-2">
         <input
-          id="project-name"
+          id="project-path"
           type="text"
-          bind:value={name}
-          placeholder="My Awesome Game"
-          class="w-full px-3 py-2 rounded-lg bg-[var(--color-canvas)] border border-[var(--color-surface)] focus:border-[var(--color-accent)] focus:outline-none text-[var(--color-text)] placeholder:text-[var(--color-text-muted)]"
-          maxlength="128"
+          bind:value={path}
+          placeholder="/home/user/projects/mygame"
+          class="flex-1 px-3 py-2 rounded-sm bg-[var(--color-canvas)] border border-[var(--color-surface)] focus:border-[var(--color-neon)] focus:shadow-[var(--glow-neon)] focus:outline-none text-[var(--color-text)] placeholder:text-[var(--color-muted)]"
           required
         />
-      </div>
-
-      <!-- Path -->
-      <div>
-        <label for="project-path" class="block text-sm font-medium mb-1">
-          Project Path <span class="text-red-400">*</span>
-        </label>
-        <div class="flex gap-2">
-          <input
-            id="project-path"
-            type="text"
-            bind:value={path}
-            placeholder="/home/user/projects/mygame"
-            class="flex-1 px-3 py-2 rounded-lg bg-[var(--color-canvas)] border border-[var(--color-surface)] focus:border-[var(--color-accent)] focus:outline-none text-[var(--color-text)] placeholder:text-[var(--color-text-muted)]"
-            required
-          />
-          <button
-            type="button"
-            onclick={handleBrowse}
-            class="px-3 py-2 rounded-lg bg-[var(--color-surface)] hover:bg-[var(--color-surface)]/80 transition-colors font-medium"
-          >
-            Browse
-          </button>
-        </div>
-      </div>
-
-      <!-- Actions -->
-      <div class="flex justify-end gap-2 pt-2">
         <button
           type="button"
-          onclick={onClose}
-          class="px-4 py-2 rounded-lg hover:bg-[var(--color-surface)] transition-colors"
-          disabled={loading}
+          onclick={handleBrowse}
+          class="px-3 py-2 rounded-sm bg-[var(--color-surface)] hover:bg-[var(--color-surface)]/80 transition-colors font-medium"
         >
-          Cancel
-        </button>
-        <button
-          type="submit"
-          class="px-4 py-2 rounded-lg bg-[var(--color-accent)] hover:bg-[var(--color-accent)]/80 transition-colors font-medium disabled:opacity-50"
-          disabled={loading}
-        >
-          {loading ? 'Creating...' : 'Create Project'}
+          Browse
         </button>
       </div>
-    </form>
-  </div>
-</div>
+    </div>
+  </form>
+
+  {#snippet footer()}
+    <Button variant="ghost" onclick={handleClose} disabled={loading}>
+      Cancel
+    </Button>
+    <Button onclick={handleSubmit} disabled={loading}>
+      {loading ? 'Creating...' : 'Create Project'}
+    </Button>
+  {/snippet}
+</Dialog>

@@ -7,14 +7,14 @@
   let { children } = $props();
 </script>
 
-<div class="h-screen w-screen flex flex-col overflow-hidden bg-[var(--color-canvas)]">
+<div class="h-screen w-screen flex flex-col overflow-hidden bg-[var(--color-void)]">
   <!-- Main content area -->
   <div class="flex-1 flex overflow-hidden">
     <!-- Sidebar -->
     <Sidebar />
 
     <!-- Center workspace -->
-    <main class="flex-1 overflow-hidden bg-[var(--color-canvas)]">
+    <main class="flex-1 overflow-hidden bg-[var(--color-void)]">
       {@render children()}
     </main>
 

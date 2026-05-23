@@ -56,17 +56,17 @@
 </script>
 
 {#if files.length > 0}
-  <div class="flex flex-col h-full bg-[var(--color-panel)] rounded-lg border border-[var(--color-surface)] overflow-hidden">
+  <div class="flex flex-col h-full bg-[var(--color-panel)] rounded-sm border border-[var(--color-surface)] overflow-hidden">
     <!-- Tab bar for multi-file -->
     {#if files.length > 1}
       <div class="flex items-center gap-1 px-2 py-1.5 bg-[var(--color-canvas)] border-b border-[var(--color-surface)] overflow-x-auto">
         {#each files as file, index}
           <button
             onclick={() => (activeTabIndex = index)}
-            class="px-3 py-1.5 rounded text-sm font-medium whitespace-nowrap transition-colors
+            class="px-3 py-1.5 rounded-sm text-sm font-medium whitespace-nowrap transition-all
               {activeTabIndex === index
-                ? 'bg-[var(--color-accent)] text-white'
-                : 'hover:bg-[var(--color-surface)] text-[var(--color-text-muted)]'}"
+                ? 'bg-[var(--color-neon)] text-[#0A0A0F] font-bold'
+                : 'hover:bg-[var(--color-surface)] text-[var(--color-muted)]'}"
           >
             {file.path.split('/').pop()}
           </button>
@@ -87,7 +87,7 @@
       </div>
       <button
         onclick={() => copyToClipboard(activeFile.content, activeTabIndex)}
-        class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--color-surface)] hover:bg-[var(--color-surface)]/80 transition-colors text-sm font-medium"
+        class="flex items-center gap-1.5 px-3 py-1.5 rounded-sm bg-[var(--color-surface)] hover:bg-[var(--color-surface)]/80 transition-colors text-sm font-medium"
       >
         {#if copiedIndex === activeTabIndex}
           <svg class="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -116,7 +116,7 @@
       {#if onclose}
         <button
           onclick={onclose}
-          class="px-3 py-1.5 rounded-lg hover:bg-[var(--color-surface)] transition-colors text-sm font-medium"
+          class="px-3 py-1.5 rounded-sm hover:bg-[var(--color-surface)] transition-colors text-sm font-medium"
         >
           Close
         </button>

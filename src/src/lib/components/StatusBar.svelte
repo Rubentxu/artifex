@@ -122,7 +122,7 @@
   <div class="flex items-center gap-3">
     <span>Artifex v{version}</span>
     {#if activeModel && activeProvider}
-      <span class="text-[var(--color-accent)]">•</span>
+      <span class="text-[var(--color-neon)]">•</span>
       <span class="truncate max-w-xs" title="{activeModel} ({activeProvider})">
         {activeModel} ({activeProvider})
       </span>

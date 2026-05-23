@@ -174,19 +174,19 @@
     <div class="flex items-center gap-2">
       <button
         onclick={handleExport}
-        class="px-3 py-1.5 bg-[var(--color-surface)] hover:bg-[var(--color-surface)]/80 rounded-lg text-sm font-medium"
+        class="px-3 py-1.5 bg-[var(--color-surface)] hover:bg-[var(--color-surface)]/80 rounded-sm text-sm font-medium"
       >
         Export
       </button>
       <button
         onclick={handleDelete}
-        class="px-3 py-1.5 bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded-lg text-sm font-medium"
+        class="px-3 py-1.5 bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded-sm text-sm font-medium"
       >
         Delete
       </button>
       <button
         onclick={onclose}
-        class="px-3 py-1.5 bg-[var(--color-surface)] hover:bg-[var(--color-surface)]/80 rounded-lg text-sm font-medium"
+        class="px-3 py-1.5 bg-[var(--color-surface)] hover:bg-[var(--color-surface)]/80 rounded-sm text-sm font-medium"
       >
         Close
       </button>
@@ -194,7 +194,7 @@
   </div>
 
   {#if error}
-    <div class="mx-6 mt-3 p-3 rounded-lg bg-red-500/20 border border-red-500/50 text-red-400 text-sm">
+    <div class="mx-6 mt-3 p-3 rounded-sm bg-red-500/20 border border-red-500/50 text-red-400 text-sm">
       {error}
     </div>
   {/if}
@@ -234,7 +234,7 @@
           {#each framesWithUrls as frame, index (frame.id)}
             <div class="flex flex-col items-center shrink-0">
               <div class="relative group">
-                <div class="w-20 h-20 rounded-lg overflow-hidden bg-[var(--color-surface)] border-2 border-[var(--color-surface)] hover:border-[var(--color-accent)] transition-colors">
+                <div class="w-20 h-20 rounded-sm overflow-hidden bg-[var(--color-surface)] border-2 border-[var(--color-surface)] hover:border-[var(--color-accent)] transition-colors">
                   {#if frame.url}
                     <img src={frame.url} alt={frame.name} class="w-full h-full object-cover" />
                   {:else}
@@ -248,14 +248,14 @@
                   <button
                     onclick={() => moveFrame(index, index - 1)}
                     disabled={index === 0}
-                    class="p-1 bg-[var(--color-surface)] rounded text-xs hover:bg-[var(--color-accent)] disabled:opacity-30"
+                    class="p-1 bg-[var(--color-surface)] rounded-sm text-xs hover:bg-[var(--color-neon)] hover:text-[#0A0A0F] disabled:opacity-30 transition-all"
                     title="Move left"
                   >
                     ←
                   </button>
                   <button
                     onclick={() => removeFrame(frame.id)}
-                    class="p-1 bg-red-500 rounded text-xs hover:bg-red-400"
+                    class="p-1 bg-[var(--color-destructive)] rounded-sm text-xs hover:opacity-80 transition-all"
                     title="Remove"
                   >
                     ×
@@ -263,7 +263,7 @@
                   <button
                     onclick={() => moveFrame(index, index + 1)}
                     disabled={index === framesWithUrls.length - 1}
-                    class="p-1 bg-[var(--color-surface)] rounded text-xs hover:bg-[var(--color-accent)] disabled:opacity-30"
+                    class="p-1 bg-[var(--color-surface)] rounded-sm text-xs hover:bg-[var(--color-neon)] hover:text-[#0A0A0F] disabled:opacity-30 transition-all"
                     title="Move right"
                   >
                     →
